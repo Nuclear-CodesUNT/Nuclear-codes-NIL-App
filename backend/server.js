@@ -1,6 +1,10 @@
 const express = require('express');
+const cors = require('cors'); // Import the cors package
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
+
+// Use the cors middleware
+app.use(cors()); // This will allow all origins by default
 
 // A test API endpoint
 app.get('/api/test', (req, res) => {

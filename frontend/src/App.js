@@ -5,12 +5,12 @@ function App() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // Fetch data from the backend's test endpoint
-    fetch('/api/test')
-      .then(res => res.json())
-      .then(data => setMessage(data.message))
-      .catch(err => console.error("Error fetching data:", err));
-  }, []);
+  // test endpoint
+  fetch('/api/test')
+    .then(res => res.json())
+    .then(data => setMessage(data.message))
+    .catch(err => console.error("Error fetching data:", err));
+}, []);
 
   return (
     <div className="App">
