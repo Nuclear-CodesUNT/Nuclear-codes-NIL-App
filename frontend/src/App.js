@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+import NavBar from './components/NavBar';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import About from './pages/About';
+import Profile from './pages/Profile';
 
 function App() {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-  // test endpoint
-  fetch('/api/test')
-    .then(res => res.json())
-    .then(data => setMessage(data.message))
-    .catch(err => console.error("Error fetching data:", err));
-}, []);
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>NIL Project Frontend</h1>
-        <p>Message from Backend: <strong>{message || "Loading..."}</strong></p>
-      </header>
-    </div>
+    <Router>
+      <NavBar />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </main>
+    </Router>
   );
 }
 
