@@ -2,7 +2,7 @@
 App to support and streamline NIL deals to college athletes
 
 ## Prereqs 
-1. Node.js (v16 or later)
+1. Node.js (v16 or later) https://nodejs.org/en/download
 2. npm (comes with node)
 
 ## Installation
