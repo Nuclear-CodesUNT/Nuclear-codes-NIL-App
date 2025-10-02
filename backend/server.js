@@ -4,7 +4,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Use the cors middleware
-app.use(cors()); // This will allow all origins by default
+app.use(cors()); 
 
 // A test API endpoint
 app.get('/api/test', (req, res) => {
