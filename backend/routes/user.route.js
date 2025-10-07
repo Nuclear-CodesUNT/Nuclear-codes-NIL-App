@@ -5,4 +5,7 @@ const router = express.Router();
 // Route to get logged-in user profile
 router.get('/profile', getUserProfile);
 
+// Route to update logged-in user profile
+router.put('/profile', updateUserProfile);
+
 module.exports = router;
