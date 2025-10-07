@@ -1,6 +1,6 @@
 backend/node_modules
 frontend/node_modules
-.tsx* 
+.ts* 
 frontend/build
 frontend/.next
 
