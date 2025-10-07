@@ -2,26 +2,48 @@ import Link from 'next/link';
 
 export default function NavBar() {
   return (
-    <nav className="p-3 bg-gray-100 flex gap-4 border-b">
-      <Link href="/" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
-        Home
-      </Link>
-      <span className="text-gray-400">|</span>
-      <Link href="/login" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
-        Login
-      </Link>
-      <span className="text-gray-400">|</span>
-      <Link href="/about" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
-        About
-      </Link>
-      <span className="text-gray-400">|</span>
-      <Link href="/profile" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
-        Profile
-      </Link>
-      <span className="text-gray-400">|</span>
-      <Link href="/signup" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
-        SignUp
-      </Link>
+    <nav className="flex justify-between items-center bg-white px-6 py-4 shadow-md border-b border-gray-300">
+      {/* Left side - Logo will go here + about and profile for now */}
+      <div className="flex items-center gap-6">
+        {/* Nav bar title */}
+        <Link href="/" className="text-xl font-bold text-black">
+          NIL Law
+        </Link>
+        
+        <div className="flex gap-4">
+          <Link
+            href="/about"
+            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            <span>About</span>
+          </Link>
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            <span>Profile</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Right side aligned */}
+      <div className="flex gap-4">
+        {/* Sign Up Button */}
+        <Link
+          href="/signup"
+          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+        >
+          <span>Create Account</span>
+        </Link>
+
+        {/* Login Button */}
+        <Link
+          href="/login"
+          className="flex items-center gap-2 bg-white text-black border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+        >
+          <span>Login</span>
+        </Link>
+      </div>
     </nav>
   );
 }
