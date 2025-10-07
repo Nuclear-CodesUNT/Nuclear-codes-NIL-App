@@ -29,7 +29,7 @@ export default function Login() {
         </div>
         <button
           type="submit"
-          className="w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="btn-primary"
         >
           Sign In
         </button>

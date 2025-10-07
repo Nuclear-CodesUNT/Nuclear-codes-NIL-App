@@ -18,6 +18,10 @@ export default function NavBar() {
       <Link href="/profile" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
         Profile
       </Link>
+      <span className="text-gray-400">|</span>
+      <Link href="/signup" className="text-gray-800 hover:text-pink-500 hover:underline font-medium">
+        SignUp
+      </Link>
     </nav>
   );
 }
