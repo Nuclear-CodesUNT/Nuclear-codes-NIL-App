@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
     // -- Common fields for all users --
@@ -29,3 +30,16 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true }); // Automatically adds createdAt and updatedAt fields
 
+// Password hashing
+userSchema.pre('save', async function (next) {
+    // Only hash the password upon initial creation or when modified
+    if (!this.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+const User = mongoose.model('User', userSchema);
+export default User;
