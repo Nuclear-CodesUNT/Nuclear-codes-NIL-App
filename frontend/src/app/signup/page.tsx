@@ -84,6 +84,7 @@ export default function SignupPage() {
           <input
             type="text"
             id="name"
+            className="form-field"
             name="name"
             placeholder="Enter your name"
             value={formData.name}
@@ -97,6 +98,7 @@ export default function SignupPage() {
           <input
             type="email"
             id="email"
+            className="form-field"
             name="email"
             placeholder="Enter your email"
             value={formData.email}
@@ -110,6 +112,7 @@ export default function SignupPage() {
           <input
             type="password"
             id="password"
+            className="form-field"
             name="password"
             placeholder="Enter your password"
             value={formData.password}
@@ -123,6 +126,7 @@ export default function SignupPage() {
           <input
             type="password"
             id="confirmPassword"
+            className="form-field"
             name="confirmPassword"
             placeholder="Confirm password"
             value={formData.confirmPassword}
