@@ -22,6 +22,7 @@ npm install
 Need two seperate terminal windows
 ```
 cd backend
+npm run build
 npm start
 ```
 ```
