@@ -2,12 +2,16 @@ import Link from 'next/link';
 
 export default function NavBar() {
   return (
-    <nav className="flex justify-between items-center bg-white px-6 py-4 shadow-md border-b border-gray-300">
+    <nav className="sticky top-0 flex justify-between items-center bg-white px-6 py-4 shadow-md border-b border-gray-300">
       {/* Left side - Logo will go here + about and profile for now */}
       <div className="flex items-center gap-6">
         {/* Nav bar title */}
         <Link href="/" className="text-xl font-bold text-black">
-          NIL Law
+          <img
+            src="/logo/NIL Law.svg"
+            alt="NIL Law Logo"
+            className="rounded-md h-10 w-10 object-contain"
+          />
         </Link>
         
         <div className="flex gap-4">

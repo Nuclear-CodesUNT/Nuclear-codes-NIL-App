@@ -30,10 +30,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Custom component classes using standard CSS (Tailwind v4 approach) */
 .btn-primary {
   width: 100%;
-  background-color: rgb(219 39 119); /* pink-600 */
+  background-color: #2B2D42; 
   color: rgb(255 255 255);
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
@@ -43,7 +42,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: rgb(190 24 93); /* pink-700 */
+  background-color: #434565; 
 }
 
 .btn-primary:focus {
