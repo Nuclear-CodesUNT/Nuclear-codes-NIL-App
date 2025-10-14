@@ -12,51 +12,8 @@ export default function App() {
   ];
 
  return (
-  <div className="min-h-screen bg-gray-100">
-    {/* Top Navigation Bar */}
-    <nav
-      className={`
-        flex justify-between items-center   {/* Flexbox layout */}
-        bg-white                            {/* Background color*/}
-        px-6 py-4                           {/* Horizontal/Vertcial padding */}
-        shadow-md border-b border-gray-300  {/* Bottom border color */}
-      `}
-    >
-      {/* Nav bar title */}
-      <h1 className="text-xl font-bold text-black">NIL Law</h1>
-
-      {/* Buttons */}
-      <div className="flex gap-4">
-        {/* Create Account */}
-        <button
-          className={`
-            flex items-center gap-2       {/* Flexbox layout, gap between items */}
-            bg-black text-white           {/* Background color, text color */}
-            px-4 py-2 rounded-lg          {/* Padding, add rounded corners */}
-            hover:bg-gray-800 transition  {/* On hover effect color */}
-          `}
-        >
-          <span>👤</span> {/* Create account icon */}
-          <span>Create Account</span> {/* Create account btn txt */}
-        </button>
-
-        {/* View Profile */}
-        <button
-          className={`
-            flex items-center gap-2      {/* Flexbox layout, gap between items */}
-            bg-white text-black          {/* Backgrond color, text color */}
-            border border-gray-300       {/* Border color */}
-            px-4 py-2 rounded-lg         {/* Padding, add rounded corners */}
-            hover:bg-gray-100 transition {/* On hover effect color */}
-          `}
-        >
-          <span>👤</span> {/* View profile icon */}
-          <span>View Profile</span> {/* View profile btn text */}
-        </button>
-      </div>
-    </nav>
-
-      {/* Header Section Below Nav */}
+  <div className="min-h-screen">
+      {/* Header Section*/}
       <div className="text-center mt-8 mb-6 px-4">
         <h2 className="text-3xl font-bold text-black mb-2">Create Your Account</h2>
         <p className="text-gray-600 text-lg">
