@@ -13,8 +13,8 @@ export default function App() {
   ];
 
  return (
-  <div className="min-h-screen bg-gray-100">
-      {/* Header Section Below Nav */}
+  <div className="min-h-screen">
+      {/* Header Section*/}
       <div className="text-center mt-8 mb-6 px-4">
         <h2 className="text-3xl font-bold text-black mb-2">Create Your Account</h2>
         <p className="text-gray-600 text-lg">
