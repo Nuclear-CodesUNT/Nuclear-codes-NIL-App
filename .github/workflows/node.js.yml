@@ -30,6 +30,7 @@ jobs:
     - run: npm install
       working-directory: frontend
     - run: npm run dev --if-present
+      working-directory: frontend
   
   build_backend:
 
