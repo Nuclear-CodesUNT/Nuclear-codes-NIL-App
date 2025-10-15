@@ -12,7 +12,7 @@ on:
 jobs:
   build_frontend:
 
-    runs-on: arch-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
