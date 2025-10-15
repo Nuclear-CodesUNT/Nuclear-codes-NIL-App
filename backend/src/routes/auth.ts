@@ -13,18 +13,27 @@ const router = Router();
 
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role, school, currentYear, sport, position } = req.body;
     
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'Name, email, password, and role are required' });
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({ 
+      name, 
+      email, 
+      password: hashedPassword,
+      role,
+      school,
+      currentYear,
+      sport,
+      position
+     });
     await newUser.save();
     const userId = String(newUser._id);
     req.session.userId = userId;
-    return res.status(201).json({ id: userId, name: newUser.name });
+    return res.status(201).json({ id: userId, name: newUser.name, role: newUser.role });
   } catch (error) {
     console.error('Signup error:', error);
     return res.status(500).json({ message: 'Internal server error' });
