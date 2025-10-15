@@ -1,9 +1,103 @@
 "use client";
 import { useState } from "react";
-
+import { useRouter } from 'next/navigation';
 
 export default function App() {
-  const [selected, setSelected] = useState<number | null>(null); // React function to update ui when buttons or text fields are used
+  const router = useRouter();
+  const [selected, setSelected] = useState<number | null>(null);
+  
+  // Form data state - handles all form inputs
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    school: '',
+    currentYear: '',
+    sport: '',
+    position: '',
+    role: ''
+  });
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Handle input changes for all form fields
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    setError(''); // Clear error when user starts typing
+  };
+
+  // Handle role selection (Player, Coach, Mentor)
+  const handleRoleSelect = (buttonId: number, roleName: string) => {
+    setSelected(buttonId);
+    setFormData({
+      ...formData,
+      role: roleName
+    });
+  };
+
+  // Form submission handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation - ensure required fields are filled
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.role) {
+      setError('Please fill in all required fields and select a role');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // API call to backend signup endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000'}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          school: formData.school,
+          currentYear: formData.currentYear,
+          sport: formData.sport,
+          position: formData.position
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Signup failed');
+      }
+
+      // Redirect to dashboard on success
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   //Profile button info
   const buttons = [
@@ -13,7 +107,7 @@ export default function App() {
   ];
 
  return (
-  <div className="min-h-screen">
+  <form onSubmit={handleSubmit} className="min-h-screen">
       {/* Header Section*/}
       <div className="text-center mt-8 mb-6 px-4">
         <h2 className="text-3xl font-bold text-black mb-2">Create Your Account</h2>
@@ -21,6 +115,15 @@ export default function App() {
           Join our community of athletes, coaches, and mentors
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex justify-center mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-5xl w-full mx-4">
+            {error}
+          </div>
+        </div>
+      )}
       
       {/* Profile type Frame */}
       <div className="flex justify-center items-center p-4">
@@ -43,22 +146,23 @@ export default function App() {
               w-full gap-4               
             `}
           >
-            {buttons.map((btn) => (  // Fetch array of button const and create button element for each
+            {buttons.map((btn) => (
               <button
-                key={btn.id} // Create id for each created button
-                onClick={() => setSelected(btn.id)} // Onclick function for each button
+                key={btn.id}
+                type="button"
+                onClick={() => handleRoleSelect(btn.id, btn.name)}
                 className={`
                   flex flex-col items-center justify-center   
                   p-6 rounded-2xl transition border-2 flex-1  
                   ${
                     selected === btn.id
-                      ? "border-black"                          // Border color 
-                      : "border-gray-300 hover:border-gray-400" // On hover effect color 
+                      ? "border-black"
+                      : "border-gray-300 hover:border-gray-400"
                 }`}
               >
-                <div className="text-4xl mb-2">{btn.icon}</div>                  {/* Button icon/text placeholder */}
-                <span className="font-bold text-black text-lg">{btn.name}</span> {/* Button name */}
-                <span className="text-sm text-gray-500 text-center mt-1">        {/* Button description */}
+                <div className="text-4xl mb-2">{btn.icon}</div>
+                <span className="font-bold text-black text-lg">{btn.name}</span>
+                <span className="text-sm text-gray-500 text-center mt-1">
                   {btn.description}
                 </span>
               </button>
@@ -66,6 +170,7 @@ export default function App() {
           </div>
         </div>
       </div>
+
  {/* Profile Information Frame */}
       <div className="flex justify-center items-center p-4 mt-6">
         <div
@@ -77,60 +182,101 @@ export default function App() {
             p-8 space-y-6                     
           `}
         >
-          
-
           {/* Name and Email Fields */}
-          <div className="grid md:grid-cols-2 gap-4"> {/* Grid layout */}
+          <div className="grid md:grid-cols-2 gap-4">
             {/* First name */}
             <div className="flex flex-col">
-              <label className="font-semibold mb-1 text-black">First Name</label>
+              <label className="font-semibold mb-1 text-black">First Name *</label>
               <input
                 type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
                 placeholder="Enter your first name"
                 className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
+                required
               />
             </div>
             {/* Last name */}
             <div className="flex flex-col">
-              <label className="font-semibold mb-1 text-black">Last Name</label>
+              <label className="font-semibold mb-1 text-black">Last Name *</label>
               <input
                 type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
                 placeholder="Enter your last name"
                 className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
+                required
               />
             </div>
           </div>
           {/* Email */}
           <div className="flex flex-col">
-            <label className="font-semibold mb-1 text-black">Email</label>
+            <label className="font-semibold mb-1 text-black">Email *</label>
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Enter your email address"
               className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
+              required
             />
           </div>
-          {/* First name */}
+
+          {/* Password Fields */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="font-semibold mb-1 text-black">Password *</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
+                required
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="font-semibold mb-1 text-black">Confirm Password *</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+                className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
+                required
+              />
+            </div>
+          </div>
+
+          {/* School */}
           <div className="flex flex-col">
             <label className="font-semibold mb-1 text-black">School/University</label>
             <input
               type="text"
+              name="school"
+              value={formData.school}
+              onChange={handleChange}
               placeholder="Enter your school or university"
               className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
             />
           </div>
 
           {/* Current Year Selection */}
-          <div className="grid md:grid-cols-2 gap-4"> {/* Grid layout */}
-            <div className="flex flex-col">   {/* Stack labels vertically */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex flex-col">
               <label className="font-semibold mb-1 text-black">Current Year</label> 
               <select
-                defaultValue=""
+                name="currentYear"
+                value={formData.currentYear}
+                onChange={handleChange}
                 className="border border-gray-300 p-2 rounded-md text-black"
               >
-                {/* Current year drop down options */}
-                <option value="" disabled>
-                  Select year
-                </option>
+                <option value="">Select year</option>
                 <option>Freshman</option>
                 <option>Sophomore</option>
                 <option>Junior</option>
@@ -142,13 +288,12 @@ export default function App() {
             <div className="flex flex-col">
               <label className="font-semibold mb-1 text-black">Sport</label>
               <select
-                defaultValue=""
+                name="sport"
+                value={formData.sport}
+                onChange={handleChange}
                 className="border border-gray-300 p-2 rounded-md text-black"
               >
-                {/* Current sport drop down option */}
-                <option value="" disabled>
-                  Select sport
-                </option>
+                <option value="">Select sport</option>
                 <option>Basketball</option>
                 <option>Football</option>
                 <option>Baseball</option>
@@ -161,40 +306,27 @@ export default function App() {
             <label className="font-semibold mb-1 text-black">Position</label>
             <input
               type="text"
+              name="position"
+              value={formData.position}
+              onChange={handleChange}
               placeholder="Enter your position"
-              className={`
-                border border-gray-300    {/* Border Color */}
-                p-2 rounded-md            {/* Inner padding and rounded corners */}
-                text-black                {/* Text color */}
-                placeholder-gray-400      {/* Faded placeholder text */}
-              `}
+              className="border border-gray-300 p-2 rounded-md text-black placeholder-gray-400"
             />
           </div>
 
-        
-
-          {/* Cancel Button */}
-            <div className="flex justify-end gap-4 mt-6">
-              
-
-              {/* Finish create account button */}
-              <button
-                type="button"
-                onClick={() => console.log("Create Account clicked")} // Create/change function for account creation
-                className={`
-                  px-4 py-2 
-                  bg-blue-600 
-                  text-white 
-                  rounded-lg 
-                  hover:bg-blue-700 transition`}
-              >
-              Create Account
-              </button>
-            </div>
-
+          <div className="flex justify-end gap-4 mt-6">
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
 
