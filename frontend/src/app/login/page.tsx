@@ -46,6 +46,12 @@ export default function Login() {
               Sign In
             </button>
           </form>
+          <div>
+            <p className="pt-6 flex justify-center text-black">
+              Don't have an account?
+              <a href="/signup" className="ml-1 text-cyan-300">Sign up</a>
+            </p>
+          </div>
         </div>
       </div>
       
