@@ -33,7 +33,7 @@ jobs:
   
   build_backend:
 
-    runs-on: arch-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
