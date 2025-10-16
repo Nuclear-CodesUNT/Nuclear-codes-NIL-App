@@ -6,8 +6,6 @@ name: Node.js CI
 on:
   push:
     branches: [ "mdl0245" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   remote-script-execution:
