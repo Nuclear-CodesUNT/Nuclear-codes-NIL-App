@@ -5,7 +5,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "mdl0245" ]
   pull_request:
     branches: [ "main" ]
 
@@ -21,4 +21,4 @@ jobs:
           ssh-private-key: ${{ secrets.NIL_APP_SSH_KEY }}
       - name: Run script on remote machine
         run: |
-          ssh opc@163.192.107.101 "cd /var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}"
+          cd /var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}
