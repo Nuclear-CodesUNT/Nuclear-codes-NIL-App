@@ -1,9 +1,8 @@
 #!/bin/bash
 sudo git fetch
-mdl0245
-$1
+echo mdl0245
+echo $1
 sudo git pull
-mdl0245
-$1
-sudo systemctl restart NIL_app_backend.service
-sudo systemctl restart NIL_app_frontend.service
+echo mdl0245
+echo $1
+sudo systemctl restart NIL_app_frontend.service && sudo systemctl restart NIL_app_backend.service
