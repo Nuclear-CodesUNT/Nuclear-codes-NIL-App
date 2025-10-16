@@ -1,4 +1,4 @@
 #!/bin/bash
-sudo git fetch https://mdl0245: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@github.com/Nuclear-CodesUNT/Nuclear-codes-NIL-App.git mdl0245-CI
-sudo git pull https://mdl0245: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@github.com/Nuclear-CodesUNT/Nuclear-codes-NIL-App.git mdl0245-CI
+sudo git fetch https://mdl0245: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@github.com/Nuclear-CodesUNT/Nuclear-codes-NIL-App.git main
+sudo git pull https://mdl0245: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@github.com/Nuclear-CodesUNT/Nuclear-codes-NIL-App.git main
 sudo systemctl restart NIL_app_frontend.service && sudo systemctl restart NIL_app_backend.service
