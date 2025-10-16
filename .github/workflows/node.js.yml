@@ -11,6 +11,7 @@ jobs:
   remote-script-execution:
     runs-on: self-hosted
     steps:
+      - uses: actions/checkout@v4
       - name: Run script on remote machine
         run: |
           cd /var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}
