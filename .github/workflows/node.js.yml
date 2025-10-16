@@ -21,4 +21,4 @@ jobs:
           ssh-private-key: ${{ secrets.NIL_APP_SSH_KEY }}
       - name: Run script on remote machine
         run: |
-          ssh opc@163.192.107.101 "cd var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}"
+          ssh opc@163.192.107.101 "cd /var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}"
