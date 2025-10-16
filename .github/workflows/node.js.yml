@@ -13,12 +13,6 @@ jobs:
   remote-script-execution:
     runs-on: self-hosted
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.NIL_APP_SSH_KEY }}
       - name: Run script on remote machine
         run: |
           cd /var/www/Nuclear-codes-NIL-App && ./CI_CD_script.sh ${{ secrets.Access_Key }}
