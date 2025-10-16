@@ -1,4 +1,5 @@
 #!/bin/bash
+
 sudo git fetch
 echo mdl0245
 echo $1
