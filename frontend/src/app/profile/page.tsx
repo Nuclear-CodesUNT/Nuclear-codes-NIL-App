@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { DayPicker } from "react-day-picker";
 import { Share2, UserPlus, MessageSquare, Trophy, MapPin, CalendarDays, Eye, ThumbsUp, MessageCircle } from "lucide-react";
+import "react-day-picker/style.css";
 
 interface AthleteInformation {
   playerName: string;
@@ -38,13 +39,13 @@ export default function AthleteProfile({
   return (
     <>
       {/* Main container*/}
-      <div className="grid grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full">
 
         {/* Left Column Player Profile/Highlights */}
         <div className="flex flex-col gap-6 pr-4">
 
-          {/* Player Profile Frame */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6">
+          {/* Player Profile Frame */} {/* Scaling tweaks needed to fix smaller screen flexing */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6">
             {/* Profile picture */}
             <div className="flex-shrink-0">
               <img
@@ -120,7 +121,7 @@ export default function AthleteProfile({
           </div>
 
           {/* Recent Highlights Section */}
-          <div className="bg-white border border-gray-200 rounded-lg shadow p-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Recent Highlights</h2>
               <span className="text-sm text-gray-500">{placeholderHighlights.length} Videos</span>
@@ -130,7 +131,7 @@ export default function AthleteProfile({
               {placeholderHighlights.map((highlight) => (
               <div
                 key={highlight.id}
-                className="overflow-hidden rounded-lg border border-gray-200 shadow flex flex-col"
+                className="overflow-hidden rounded-lg border border-gray-200 flex flex-col"
               >
                 {/* Image */}
                 <div className="w-full h-40 sm:h-48 overflow-hidden">
@@ -165,22 +166,23 @@ export default function AthleteProfile({
         </div> {/* End Left Column */}
 
         {/* Right Column Game Schedule Sidebar */}
-        <div className="w-120 p-6 py-4 top-25 sticky border rounded-lg border-gray-200 self-start">
+        <div className="w-full sm:w-[300px] md:w-[400px] lg:w-[450px] xl:w-[500px] p-6 py-4 top-25 sticky border rounded-lg border-gray-200 self-start"> {/* Scaling tweaks needed here */}
           <div className="flex gap-2 mb-4">
             <CalendarDays className="w-5 h-5 text-gray-700" />
             <h2>Game Schedule</h2>
           </div>
 
           <div className="mb-6">
-            <div className="w-full bg-white border border-gray-200 rounded shadow p-3">
+            <div className="w-full bg-white border border-gray-200 rounded p-3">
               <div className="flex justify-center">
                 <DayPicker
-                  navLayout="around"
                   showOutsideDays
                   className="w-full max-w-[350px]"
                   styles={{
+                    months: { display: 'flex', justifyContent: 'center', width: '100%' },
+                    month: { width: '100%' }, // Stretch the grid
                     head_cell: { padding: '0.5rem' },
-                    day: { padding: '0.75rem' },
+                    day: { padding: '0.95rem' },
                   }}
                 />
               </div>
@@ -188,6 +190,7 @@ export default function AthleteProfile({
           </div>
 
           <div>
+            {/* Game Days*/ }
             <ul className="space-y-4">
             {[
               { title: "vs Hawks", type: "Home", location: "Stadium A", date: "Oct 20" },
