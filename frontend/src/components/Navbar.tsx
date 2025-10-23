@@ -17,13 +17,13 @@ export default function NavBar() {
         <div className="flex gap-4">
           <Link
             href="/about"
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
           >
             <span>About</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
           >
             <span>Profile</span>
           </Link>
@@ -37,7 +37,7 @@ export default function NavBar() {
           href="/signup"
           className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
         >
-          <span>Create Account</span>
+          <span>Get Started</span>
         </Link>
 
         {/* Login Button */}
@@ -45,7 +45,7 @@ export default function NavBar() {
           href="/login"
           className="flex items-center gap-2 bg-white text-black border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
         >
-          <span>Login</span>
+          <span>Sign In</span>
         </Link>
       </div>
     </nav>
