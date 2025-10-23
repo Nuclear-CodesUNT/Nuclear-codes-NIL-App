@@ -309,7 +309,7 @@ export default function App() {
             <button
               type="button"
               onClick={handleNext}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="px-6 py-2 btn-primary text-white rounded-lg"
             >
               Next Step
             </button>
@@ -332,6 +332,7 @@ export default function App() {
         {/* Athlete Fields */}
         {formData.role === 'athlete' && (
           <>
+          {/* School */}
             <div className="flex flex-col">
               <label className="font-semibold mb-1 text-black">School/University *</label>
               <input
@@ -344,7 +345,7 @@ export default function App() {
                 required
               />
             </div>
-
+          
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-black">Current Year *</label>
