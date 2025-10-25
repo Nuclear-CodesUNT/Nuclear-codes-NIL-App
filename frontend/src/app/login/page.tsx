@@ -41,11 +41,17 @@ export default function Login() {
             </div>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary w-full"
             >
               Sign In
             </button>
           </form>
+          <div>
+            <p className="pt-6 flex justify-center text-black">
+              Don't have an account?
+              <a href="/signup" className="ml-1 text-cyan-300">Sign up</a>
+            </p>
+          </div>
         </div>
       </div>
       
