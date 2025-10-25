@@ -27,6 +27,12 @@ export default function NavBar() {
           >
             <span>Profile</span>
           </Link>
+          <Link
+            href="/admin-portal"
+            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+          >
+            <span>Admin Portal</span>
+          </Link>
         </div>
       </div>
 
