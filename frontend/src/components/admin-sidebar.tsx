@@ -1,5 +1,4 @@
 import { Users, BookOpen, FileText, LayoutDashboard } from "lucide-react";
-import exampleImage from '../../public/logo/NIL Law.svg';
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -19,7 +18,7 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
     <div className="w-64 bg-[#1e2a47] min-h-screen text-white flex flex-col">
       <div className="p-6 border-b border-[#2a3a5a]">
         <div className="flex items-center gap-3">
-          <img src={exampleImage} alt="NIL Logo" className="w-10 h-10 rounded-full" />
+          <img src={'logo/NIL Law.svg'} alt="NIL Logo" className="w-10 h-10 rounded-full" />
           <div>
             <h2 className="text-sm">NIL Athlete Law</h2>
             <p className="text-xs text-gray-400">Admin Portal</p>
