@@ -56,7 +56,7 @@ export default function Login() {
       </div>
       
       {/* right column - hero section */}
-      <div className="bg-[#2B2D42] flex items-start justify-center p-12 pt-50">
+      <div className="bg-brand-navy flex items-start justify-center p-12 pt-50">
         <div className="w-full max-w-lg">
           <h1 className="text-white text-5xl font-bold leading-tight mb-8">
             Your NIL Solution,<br/> All in One Platform.

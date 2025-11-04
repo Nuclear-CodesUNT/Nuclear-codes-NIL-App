@@ -1,14 +1,27 @@
+import Image from 'next/image';
+import Link from 'next/link';
+
 export default function About() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-slate-800 text-white py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">About NIL Athlete Law</h1>
-          <p className="text-lg md:text-xl text-slate-200 max-w-3xl">
-            Empowering student athletes to maximize their potential through expert legal
-            guidance, financial education, and comprehensive NIL management solutions.
-          </p>
+      <section className="bg-brand-navy text-white py-16 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-1">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Name, Your Image, Your Legacy.<br/> We Protect and Empower It All.</h1>
+            <p className="text-lg md:text-xl text-slate-200 max-w-3xl">
+              At NIL Athlete Law & Agency PLLC, we are built on a simple, powerful belief:<br/> Your athletic talent is only one part of your potential.<br/>Your name, image, and likeness (NIL) represent your personal brand—a valuable business asset that deserves expert protection and strategic growth. <br/>We are more than just legal advisors; we are your partners in building a foundation for generational wealth.
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <Image
+              src="/logo/NIL Law.svg"
+              alt="NIL Law Logo"
+              width={300}
+              height={300}
+              className="w-64 md:w-80"
+            />
+          </div>
         </div>
       </section>
 
@@ -16,28 +29,30 @@ export default function About() {
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
           <div>
-            <h2 className="text-3xl font-bold mb-6">Our Story</h2>
+            <h2 className="text-3xl font-bold mb-6">Our Unique Commitment: <br/> Beyond the Contract</h2>
             <p className="text-gray-700 mb-4">
-              Founded in 2025, NIL Athlete Law and Finance was born from a simple
-              observation: student athletes needed dedicated support to navigate
-              the complex world of name, image, and likeness rights.
+              While many may offer deal-making, we provide a comprehensive blueprint for lifelong success. Our promise is twofold:
             </p>
-            <p className="text-gray-700">
-              Our founding team of sports attorneys, financial advisors, former athletes
-              and developers came together with a shared mission: to level the playing
-              field and ensure every athlete has access to professional guidance,
-              regardless of their sport or school.
-            </p>
+            <ol className="list-disc list-inside space-y-3 ml-4">
+              <li className="text-gray-700">
+                <span className="font-semibold">Top-of-the-Line Representation:</span> We are Texas' premier law firm specializing exclusively in NIL. We provide fierce legal advocacy to protect your rights, negotiate your contracts, and safeguard your eligibility.
+              </li>
+              <li className="text-gray-700">
+                <span className="font-semibold">Paving Your Road to Generational Wealth:</span> We go beyond the signature on the deal. Our mission is to empower you with the knowledge and mentorship to transform NIL earnings into lasting financial freedom and business success.
+              </li>
+            </ol>
           </div>
-          <div className="bg-slate-700 text-white p-8 rounded-lg">
-            <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
+          <div className="bg-brand-navy text-white p-8 rounded-lg">
+            <h2 className="text-3xl font-bold mb-6">Your Journey Starts Here</h2>
             <p className="text-slate-100 mb-4">
-              To provide student athletes with the tools, knowledge, and
-              support they need to protect their rights, maximize their
-              opportunities, and build sustainable financial futures through
-              responsible NIL management.
+              You've dedicated your life to excellence on the field. Now, let us help you apply that same discipline to building your legacy off it.
+              Ready to build more than just a brand? Contact Us today to begin the journey.
             </p>
-            <p className="text-slate-200 text-sm">
+            <Link href="/signup"
+            className="btn-primary !bg-slate-700">
+                Get Started!
+            </Link>
+            <p className="text-slate-200 text-sm mt-4">
               Serving over 10,000 athletes across 500+ universities nationwide
             </p>
           </div>
@@ -45,48 +60,45 @@ export default function About() {
       </section>
 
       {/* Core Values Section */}
-      <section className="bg-gray-50 py-16 px-6">
+      <section className="bg-brand-navy py-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Core Values</h2>
+          <h2 className="text-3xl font-bold text-center text-white mb-6">The Pillars of Our Mentorship</h2>
+          <h3 className="text-white text-center mb-6">We equip you with the tools not just for your next game, but for your entire life. Our holistic program includes:</h3>
           <div className="grid md:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
+              <div className="w-12 h-12 bg-brand-navy text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 1
               </div>
-              <h3 className="text-xl font-semibold mb-3">Athlete First</h3>
+              <h3 className="text-xl font-semibold mb-3">Money Management Mastery</h3>
               <p className="text-gray-600 text-sm">
-                We put athletes at the center of everything we do, ensuring their interests are
-                always protected and prioritized.
+                Learn how to budget, save, and manage your new income responsibly.
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
+              <div className="w-12 h-12 bg-brand-navy text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-3">Transparency</h3>
+              <h3 className="text-xl font-semibold mb-3">Business Acumen & Investing</h3>
               <p className="text-gray-600 text-sm">
-                Clear, honest communication about legal requirements, financial
-                implications, and partnership opportunities.
+                Gain foundational knowledge in business and explore strategic investment opportunities to make your money work for you.
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
+              <div className="w-12 h-12 bg-brand-navy text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-3">Education</h3>
+              <h3 className="text-xl font-semibold mb-3">Entrepreneurship Guidance</h3>
               <p className="text-gray-600 text-sm">
-                Empowering athletes with knowledge to make informed decisions about
-                their name, image, and likeness rights.
+                For those looking to start their own ventures, we provide the initial strategic insight to help you build your own brand.
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 4
               </div>
-              <h3 className="text-xl font-semibold mb-3">Innovation</h3>
+              <h3 className="text-xl font-semibold mb-3">Maintaining a Healthy Lifestyle</h3>
               <p className="text-gray-600 text-sm">
-                Leveraging cutting-edge technology to simplify complex legal and financial
-                processes for modern athletes.
+                We provide resources and guidance on balancing the new demands of business with the discipline required to excel in your sport and personal life.
               </p>
             </div>
           </div>
@@ -96,10 +108,11 @@ export default function About() {
       {/* Why We Exist Section */}
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-6">Why We Exist</h2>
+          <h2 className="text-3xl font-bold text-center mb-6">Why Texas Athletes Trust Us</h2>
           <p className="text-center text-gray-700 mb-12 max-w-3xl mx-auto">
-            The NIL landscape is complex and constantly evolving. Athletes deserve a trusted partner
-            who understands both the legal intricacies and the unique pressures of collegiate sports.
+            <span className="font-semibold">Exclusive NIL Expertise </span><br/> Our practice is 100% dedicated to the complex landscape of Name, Image, and Likeness. We know the NCAA rules, Texas laws, and the business landscape inside and out.<br/>
+              <span className="font-semibold">Attorney-Led Assurance</span><br/>As a licensed law firm (PLLC), your dealings are protected by attorney-client privilege. This means the highest standard of confidentiality and a legal duty to put your interests first.<br/>
+              <span className="font-semibold">Proven Insight</span><br/>Our team includes a former NCAA athlete-turned-attorney, providing a unique understanding of the challenges and opportunities you face.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div>
@@ -119,7 +132,7 @@ export default function About() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-slate-800 text-white py-16 px-6">
+      <section className="bg-brand-navy text-white py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">What Athletes Say</h2>
           <div className="grid md:grid-cols-3 gap-6">
@@ -198,7 +211,7 @@ export default function About() {
       </section>
 
       {/* Footer Section */}
-      <footer className="bg-slate-900 text-white py-12 px-6">
+      <footer className="bg-brand-navy text-white py-12 px-6">
         <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
