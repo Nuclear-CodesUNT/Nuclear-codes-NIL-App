@@ -1,47 +1,59 @@
+'use client'
+import Image from 'next/image'
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
+  const pathname = usePathname();
+
+  const navLinkClass = (path: string) => {
+    const baseClass = "flex items-center gap-2 text-white px-4 py-2 rounded-lg hover:bg-gray-200 transition relative";
+    const activeClass = "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white";
+    return pathname === path ? `${baseClass} ${activeClass}` : baseClass;
+  };
   return (
-    <nav className="sticky top-0 flex justify-between items-center bg-white px-6 py-4 shadow-md border-b border-gray-300">
-      {/* Left side - Logo will go here + about and profile for now */}
+    <nav className="sticky top-0 flex justify-between items-center bg-brand-navy px-6 py-2 shadow-md">
       <div className="flex items-center gap-6">
-        {/* Nav bar title */}
+        {/* Nav bar logo */}
         <Link href="/" className="text-xl font-bold text-black">
-          <img
+           <Image
             src="/logo/NIL Law.svg"
             alt="NIL Law Logo"
-            className="rounded-md h-10 w-10 object-contain"
+            width={80}
+            height={80}
+            className="rounded-md object-contain"
           />
+       
         </Link>
-        
+        {/* tabs */}
         <div className="flex gap-4">
           <Link
             href="/about"
-            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+            className={navLinkClass('/about')}
           >
             <span>About</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+            className={navLinkClass('/profile')}
           >
             <span>Profile</span>
           </Link>
           <Link
             href="/admin-portal"
-            className="flex items-center gap-2 text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+            className={navLinkClass('/admin-portal')}
           >
             <span>Admin Portal</span>
           </Link>
         </div>
       </div>
 
-      {/* Right side aligned */}
+      
       <div className="flex gap-4">
         {/* Sign Up Button */}
         <Link
           href="/signup"
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+          className="flex items-center gap-2 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
         >
           <span>Get Started</span>
         </Link>
