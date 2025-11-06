@@ -45,6 +45,12 @@ export default function NavBar() {
           >
             <span>Admin Portal</span>
           </Link>
+          <Link
+            href="/dashboard"
+            className={navLinkClass('/dashboard')}
+          >
+            <span>Dashboard</span>
+          </Link>
         </div>
       </div>
 
