@@ -12,7 +12,7 @@ export default function NavBar() {
     return pathname === path ? `${baseClass} ${activeClass}` : baseClass;
   };
   return (
-    <nav className="sticky top-0 flex justify-between items-center bg-brand-navy px-6 py-2 shadow-md">
+    <nav className="sticky top-0 z-50 flex justify-between items-center bg-brand-navy px-6 py-2 shadow-md">
       <div className="flex items-center gap-6">
         {/* Nav bar logo */}
         <Link href="/" className="text-xl font-bold text-black">
@@ -44,6 +44,12 @@ export default function NavBar() {
             className={navLinkClass('/admin-portal')}
           >
             <span>Admin Portal</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className={navLinkClass('/dashboard')}
+          >
+            <span>Dashboard</span>
           </Link>
         </div>
       </div>
