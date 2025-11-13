@@ -51,6 +51,12 @@ export default function NavBar() {
           >
             <span>Dashboard</span>
           </Link>
+          <Link
+            href="/contracts"
+            className={navLinkClass('/contracts')}
+          >
+            <span>Contracts</span>
+          </Link>
         </div>
       </div>
 

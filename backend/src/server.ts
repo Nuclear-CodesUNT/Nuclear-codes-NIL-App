@@ -6,6 +6,14 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
 import authRoutes from './routes/auth.js'; 
+import uploadRouter from './routes/upload.js'
+
+// DEBUG: Check if env vars are loaded
+console.log('Environment variables loaded:');
+console.log('PORT:', process.env.PORT);
+console.log('UPLOAD_DIR:', process.env.UPLOAD_DIR);
+console.log('ROOT_PATH:', process.env.ROOT_PATH);
+console.log('Current directory:', process.cwd());
 
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
@@ -37,5 +45,6 @@ app.use(session({
 
 //routes
 app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRouter);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
