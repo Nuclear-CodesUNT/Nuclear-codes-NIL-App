@@ -37,16 +37,15 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = process.env.ALLOWED_FILE_TYPES?.split(',') || [
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-      'application/pdf'
+      'application/pdf',
+      'application/msword',  // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  // .docx
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`));
+      cb(new Error(`Invalid file type. Only PDF, DOC, and DOCX files are allowed for contracts.`));
     }
   }
 });
