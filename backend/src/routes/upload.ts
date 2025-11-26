@@ -1,99 +1,74 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import AWS from 'aws-sdk';
 
 const router = Router();
 
-// Function to get and ensure upload directory
-const getUploadDir = () => {
-  const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-  
-  // Ensure upload directory exists
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-    console.log(`Created upload directory: ${UPLOAD_DIR}`);
-  }
-  
-  return UPLOAD_DIR;
-};
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = getUploadDir();
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Multer memory storage (no disk)
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') // 10MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'),
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = process.env.ALLOWED_FILE_TYPES?.split(',') || [
-      'application/pdf',
-      'application/msword',  // .doc
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  // .docx
-    ];
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`Invalid file type. Only PDF, DOC, and DOCX files are allowed for contracts.`));
-    }
+    const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document').split(',');
+    if (allowedTypes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Invalid file type. Only PDF, DOC, DOCX allowed.'));
   }
 });
 
-// Upload endpoint
-router.post('/', upload.single('file'), (req: Request, res: Response) => {
+// ================= Upload Endpoint =================
+router.post('/', upload.single('file'), async (req: Request, res: Response) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No file uploaded'
-      });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+    // 1️⃣ Assume role
+    const sts = new AWS.STS({
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const assumeRoleResult = await sts.assumeRole({
+      RoleArn: process.env.AWS_ASSUME_ROLE_ARN!,
+      RoleSessionName: `UploadSession-${Date.now()}`,
+      DurationSeconds: parseInt(process.env.AWS_STS_DURATION || '900'),
+    }).promise();
+
+    // 2️⃣ Create S3 client using temporary credentials
+    const s3 = new AWS.S3({
+      region: process.env.AWS_REGION,
+      accessKeyId: assumeRoleResult.Credentials!.AccessKeyId,
+      secretAccessKey: assumeRoleResult.Credentials!.SecretAccessKey,
+      sessionToken: assumeRoleResult.Credentials!.SessionToken,
+    });
+
+    // 3️⃣ Upload to S3
+    const key = `uploads/${Date.now()}-${req.file.originalname}`;
+    const uploadResult = await s3.upload({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }).promise();
 
     return res.status(200).json({
       success: true,
-      message: 'File uploaded successfully',
-      file: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        path: req.file.path
-      }
+      message: 'File uploaded to S3!',
+      s3Url: uploadResult.Location,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'File upload failed',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Error handling middleware for multer
-router.use((error: any, req: Request, res: Response, next: any) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File size too large. Maximum size is 10MB'
-      });
-    }
+// Multer error handler
+router.use((err: any, req: Request, res: Response, next: any) => {
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, message: 'File too large' });
   }
-  return res.status(500).json({
-    success: false,
-    message: error.message || 'Upload failed'
-  });
+  res.status(500).json({ success: false, message: err.message });
 });
 
 export default router;
