@@ -7,6 +7,8 @@ export default function Form() {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -25,6 +27,7 @@ export default function Form() {
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       setFile(droppedFile);
+      await displayFile(droppedFile)
       await uploadFile(droppedFile);
     }
   };
@@ -33,6 +36,7 @@ export default function Form() {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
+      await displayFile(selectedFile)
       await uploadFile(selectedFile);
     }
   };
@@ -41,6 +45,7 @@ export default function Form() {
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", fileToUpload);
+
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/upload`, {
@@ -61,92 +66,146 @@ export default function Form() {
     }
   };
 
+
+  const displayFile = (fileToUpload: File) => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    const url = URL.createObjectURL(fileToUpload)
+    setPreviewUrl(url);
+  }
+
   const removeFile = () => {
     setFile(null);
+    if (previewUrl){
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto p-8">
-      <div
-        className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-          isDragging
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 bg-gray-50'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {/* Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="w-24 h-24 bg-red-500 rounded-lg flex items-center justify-center">
-              <FileText className="w-12 h-12 text-white" />
-            </div>
-            <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center border-4 border-gray-50">
-              <svg className="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" stroke="white" strokeWidth="2" fill="none"/>
-              </svg>
+      {!file && (
+        <div
+          className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+            isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="w-24 h-24 bg-red-500 rounded-lg flex items-center justify-center">
+                <FileText className="w-12 h-12 text-white" />
+              </div>
+              <div className="absolute -right-2 -bottom-2 w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center border-4 border-gray-50">
+                <svg className="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                  <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" stroke="white" strokeWidth="2" fill="none"/>
+                </svg>
+              </div>
             </div>
           </div>
+
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            Upload Contract
+          </h2>
+
+          <p className="text-gray-600 mb-8">
+            Drag and drop a Microsoft Word, Excel, PowerPoint or image file to upload your contract.
+          </p>
+
+          {!file && (
+            <label className="inline-block">
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx"
+              />
+              <div className="flex items-center gap-2 bg-brand-navy hover:bg-gray-800 text-white px-6 py-3 rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-5 h-5" />
+                <span className="font-semibold">Select a file</span>
+              </div>
+            </label>
+          )}
         </div>
+      )}
 
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">
-          Upload Contract
-        </h2>
-
-        <p className="text-gray-600 mb-8">
-          Drag and drop a Microsoft Word, Excel, PowerPoint or image file to upload your contract.
+      {!file && (
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Supported formats: PDF, DOC, DOCX (Max 10MB)
         </p>
+      )}
 
-        {/* File Upload Button */}
-        {!file ? (
-          <label className="inline-block">
-            <input
-              type="file"
-              className="hidden"
-              onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx"
+      {file && (
+        <div className="flex items-center justify-center gap-4 bg-white border border-gray-300 rounded-lg p-4 max-w-md mx-auto">
+          <FileText className="w-8 h-8 text-gray-600" />
+          <div className="flex-1 text-left">
+            <p className="font-medium text-gray-800 truncate">{file.name}</p>
+            <p className="text-sm text-gray-500">
+              {(file.size / 1024 / 1024).toFixed(2)} MB
+            </p>
+          </div>
+          <button
+            onClick={removeFile}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+      )}
+
+      {isUploading && (
+        <div className="mt-6">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">Uploading...</p>
+        </div>
+      )}
+
+      {file && previewUrl && (
+        <div className={`mt-6 bg-white border border-gray-200 rounded-lg p-4 ${isFullscreen ? 'fixed inset-0 z-50 p-6 overflow-auto' : ''}`}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-gray-600">Preview</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsFullscreen((v) => !v)}
+                className="text-sm px-3 py-1 border rounded hover:bg-gray-50"
+              >
+                {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              </button>
+              <button
+                onClick={removeFile}
+                className="text-sm px-3 py-1 border rounded hover:bg-gray-50"
+              >
+                Change file
+              </button>
+            </div>
+          </div>
+
+          {file.type === 'application/pdf' ? (
+            <embed
+              src={previewUrl}
+              type="application/pdf"
+              className={isFullscreen ? 'w-full h-[90vh] rounded' : 'w-full h-96 rounded'}
             />
-            <div className="flex items-center gap-2 bg-brand-navy hover:bg-gray-800 text-white px-6 py-3 rounded-lg cursor-pointer transition-colors">
-              <Upload className="w-5 h-5" />
-              <span className="font-semibold">Select a file</span>
+          ) : file.type.startsWith('image/') ? (
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className={isFullscreen ? 'max-h-[90vh] w-auto mx-auto rounded' : 'max-h-96 w-auto mx-auto rounded'}
+            />
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-700 mb-2">No inline preview for this file type.</p>
+              <a href={previewUrl} download={file.name} className="text-blue-600 underline">
+                Download to view
+              </a>
             </div>
-          </label>
-        ) : (
-          /* Selected File Display */
-          <div className="flex items-center justify-center gap-4 bg-white border border-gray-300 rounded-lg p-4 max-w-md mx-auto">
-            <FileText className="w-8 h-8 text-gray-600" />
-            <div className="flex-1 text-left">
-              <p className="font-medium text-gray-800 truncate">{file.name}</p>
-              <p className="text-sm text-gray-500">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
-            <button
-              onClick={removeFile}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-        )}
-
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="mt-6">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">Uploading...</p>
-          </div>
-        )}
-      </div>
-
-      <p className="text-center text-sm text-gray-500 mt-6">
-        Supported formats: PDF, DOC, DOCX (Max 10MB)
-      </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
