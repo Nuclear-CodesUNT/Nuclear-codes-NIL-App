@@ -1,6 +1,9 @@
 import { Router, type Request, type Response } from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import Athlete from '../models/Athlete.js';
+import Lawyer from '../models/Lawyer.js';
+import Coach from '../models/Coach.js';
 import 'express-session'
 
 declare module 'express-session' {
@@ -13,31 +16,156 @@ const router = Router();
 
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role, ...roleSpecificData } = req.body;
     
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'Name, email, password, and role are required' });
     }
     
+    //check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exist with this email' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
+
+    //create base user
+    const newUser = new User({ 
+      name, 
+      email, 
+      password: hashedPassword,
+      role
+     });
     await newUser.save();
+
+    //craete role-specific profile
+    let roleProfile;
+    switch (role) {
+      case 'athlete':
+        const { school, currentYear, sport, position } = roleSpecificData;
+        if (!school || !currentYear || !sport || !position) {
+          await User.findByIdAndDelete(newUser._id); // Cleanup
+          return res.status(400).json({ 
+            message: 'School, current year, sport, and position are required for athletes' 
+          });
+        }
+        roleProfile = new Athlete({
+          userId: newUser._id,
+          school,
+          currentYear,
+          sport,
+          position
+        });
+        break;
+
+      case 'lawyer':
+        const { barNumber, state, firmName, specializations, yearsOfExperience } = roleSpecificData;
+        if (!barNumber || !state || yearsOfExperience === undefined) {
+          await User.findByIdAndDelete(newUser._id); // Cleanup
+          return res.status(400).json({ 
+            message: 'Bar number, state, and years of experience are required for lawyers' 
+          });
+        }
+        roleProfile = new Lawyer({
+          userId: newUser._id,
+          barNumber,
+          state,
+          firmName,
+          specializations: specializations || [],
+          yearsOfExperience
+        });
+        break;
+
+      case 'coach':
+        const { school: coachSchool, sport: coachSport } = roleSpecificData;
+        if (!coachSchool || !coachSport) {
+          await User.findByIdAndDelete(newUser._id); // Cleanup
+          return res.status(400).json({ 
+            message: 'School and sport are required for coaches' 
+          });
+        }
+        roleProfile = new Coach({
+          userId: newUser._id,
+          school: coachSchool,
+          sport: coachSport
+        });
+        break;
+
+      // case 'brand':
+      //   // Add brand validation and creation here
+      //   break;
+
+      default:
+        await User.findByIdAndDelete(newUser._id); // Cleanup
+        return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    if (roleProfile) {
+      await roleProfile.save();
+    }
     const userId = String(newUser._id);
     req.session.userId = userId;
-    return res.status(201).json({ id: userId, name: newUser.name });
+
+    return res.status(201).json({ 
+      id: userId, 
+      name: newUser.name, 
+      role: newUser.role 
+    });
+
   } catch (error) {
     console.error('Signup error:', error);
+
+    //handle duplicate key errors
+
+
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 router.post('/login', async (req: Request, res: Response) => {
-    // todo
+    try {
+      const { email, password } = req.body;
+      // validate input
+      if( !email || !password ){
+        return res.status(400).json({ message: 'Email and password are required'});
+      }
+      // Find user by email
+      const user = await User.findOne({ email });
+      if (!user){
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      //compare password with hashed password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid email or password '});
+      }
+
+      req.session.userId = String(user._id);
+      //return user data ( without password)
+      return res.status(200).json({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      })
+
+    } catch (error) {
+      console.log('Login error', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
 });
 
 // LOGOUT
 router.post('/logout', (req: Request, res: Response) => {
-    // todo
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Logout failed' });
+      }
+      res.clearCookie('connect.sid'); //clear session cookie
+      return res.status(200).json({ message: 'Logged out successfuly'});
+    });
 });
 
 // session management
