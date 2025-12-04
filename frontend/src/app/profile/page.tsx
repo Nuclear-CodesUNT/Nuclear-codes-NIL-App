@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { DayPicker } from "react-day-picker";
 import { Share2, UserPlus, MessageSquare, Trophy, MapPin, CalendarDays, Eye, ThumbsUp, MessageCircle } from "lucide-react";
 import "react-day-picker/style.css";
+
 
 interface AthleteInformation {
   playerName: string;
@@ -15,6 +17,7 @@ interface AthleteInformation {
   profilepicture?: string;
   stats?: Map<string, string>;
 }
+
 
 export default function AthleteProfile({
   playerName,
@@ -45,7 +48,15 @@ export default function AthleteProfile({
         <div className="flex flex-col gap-6 pr-4">
 
           {/* Player Profile Frame */} {/* Scaling tweaks needed to fix smaller screen flexing */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6 relative">
+            {/* Edit Profile Button */}
+            <Link
+              href="/profile/edit"
+              className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 hover:bg-gray-300 text-sm border border-gray-300 rounded-md"
+            >
+              Edit Profile
+            </Link>
+
             {/* Profile picture */}
             <div className="flex-shrink-0">
               <img
