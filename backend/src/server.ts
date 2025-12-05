@@ -9,9 +9,10 @@ import authRoutes from './routes/auth.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
+const ORIGIN = `${window.location.protocol}//${window.location.hostname}:3000`;
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ORIGIN,
   credentials: true
 }));
 app.use(express.json());
