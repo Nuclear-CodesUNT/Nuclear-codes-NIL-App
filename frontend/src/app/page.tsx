@@ -18,7 +18,9 @@ export default async function Home() {
         href="/athletes" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <span>👤</span>
+        <img src="/For Athletes.svg" 
+        alt="" 
+        className="w-5 h-5" />
         <span>For Athletes</span>
       </a>
 
@@ -26,7 +28,9 @@ export default async function Home() {
         href="/brands" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <span>🎁</span>
+        <img src="/For Brands.svg" 
+        alt="" 
+        className="w-5 h-5" />
         <span>For Brands</span>
       </a>
 
@@ -34,7 +38,9 @@ export default async function Home() {
         href="/contact" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <span>✉️</span>
+        <img src="/Contact.svg" 
+        alt="" 
+        className="w-5 h-5" />
         <span>Contact</span>
       </a>
     </nav>
@@ -42,35 +48,51 @@ export default async function Home() {
     {/** RIGHT — Icons + CTA button (all clickable) **/}
     <div className="flex justify-end items-center gap-6">
 
-      <a href="/apps" className="hover:text-gray-600 transition">
-        ▦
-      </a>
+  {/* Apps */}
+  <a href="/apps" className="hover:opacity-80 transition">
+    <img 
+      src="/Message Board.svg" 
+      alt="Apps" 
+      className="w-5 h-5"
+    />
+  </a>
 
-      <a href="/messages" className="relative hover:text-gray-600 transition">
-        💬
-        <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
-          3
-        </span>
-      </a>
+  {/* Messages */}
+  <a href="/messages" className="relative hover:opacity-80 transition">
+    <img 
+      src="/Notifications.svg" 
+      alt="Messages" 
+      className="w-5 h-5"
+    />
+    <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
+      3
+    </span>
+  </a>
 
-      <a href="/account" className="hover:text-gray-600 transition">
-        👤
-      </a>
+  {/* Account */}
+  <a href="/account" className="hover:opacity-80 transition">
+    <img 
+      src="/Profiles.svg" 
+      alt="Account" 
+      className="w-5 h-5"
+    />
+  </a>
 
-      <a 
-        href="/get-started" 
-        className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
-      >
-        Get Started
-      </a>
+  {/* Get Started button */}
+  <a 
+    href="/get-started" 
+    className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
+  >
+    Get Started
+  </a>
 
-    </div>
+  </div>
+
   </div>
 </header>
 
 <section className="w-full bg-gradient-to-br from-[#EEF4FF] to-[#DCE8FF] py-20">
   <div className="max-w-[1280px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center px-4">
-
 
     {/* LEFT — Text */}
     <div>
@@ -84,7 +106,7 @@ export default async function Home() {
         maintaining your amateur status.
       </p>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
         <a 
           href="/athletes"
           className="bg-[#1A3B8A] text-white px-6 py-3 rounded-md font-medium hover:bg-[#133069] transition"
@@ -101,29 +123,31 @@ export default async function Home() {
       </div>
     </div>
 
-    {/* RIGHT — Image with decorative shapes */}
-    <div className="relative flex justify-center">
-      
-      {/* Decorative circle — top right */}
-      <div className="absolute -top-6 -right-6 w-20 h-20 bg-yellow-300 opacity-60 rounded-full"></div>
 
-      {/* Decorative circle — bottom center */}
-      <div className="absolute bottom-0 right-1/4 w-24 h-24 bg-blue-300 opacity-40 rounded-full"></div>
+    {/* RIGHT — Image + Decorative Circles */}
+    <div className="relative flex justify-center items-center">
 
-      {/* Main card */}
-      <div className="bg-white rounded-xl shadow-lg p-4 max-w-full">
+      {/* Yellow Circle — matches Figma top-right placement */}
+      <div className="absolute -top-10 -right-10 w-28 h-28 bg-yellow-300 opacity-70 rounded-full pointer-events-none"></div>
+
+      {/* Blue Circle — matches Figma bottom-right placement */}
+      <div className="absolute bottom-4 right-20 w-40 h-40 bg-blue-300 opacity-40 rounded-full pointer-events-none"></div>
+
+      {/* Main Image Card */}
+      <div className="bg-white rounded-xl shadow-xl p-4 max-w-[584px] w-full">
         <img 
           src="/logo/NIL Law.svg"
           alt="NIL Law logo"
-          width={584}
-          height={338}
-          className="rounded-lg w-full h-auto"
+          width={450}
+          height={400}
+          className="rounded-lg w-full h-auto object-contain"
         />
       </div>
     </div>
 
   </div>
 </section>
+
 
 <section className="w-full bg-white py-24">
   <div className="max-w-[1280px] w-full mx-auto text-center px-4">
