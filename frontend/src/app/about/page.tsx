@@ -13,7 +13,7 @@ export default function About() {
               At NIL Athlete Law & Agency PLLC, we are built on a simple, powerful belief:<br/> Your athletic talent is only one part of your potential.<br/>Your name, image, and likeness (NIL) represent your personal brand—a valuable business asset that deserves expert protection and strategic growth. <br/>We are more than just legal advisors; we are your partners in building a foundation for generational wealth.
             </p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <Image
               src="/logo/NIL Law.svg"
               alt="NIL Law Logo"
@@ -35,7 +35,7 @@ export default function About() {
             </p>
             <ol className="list-disc list-inside space-y-3 ml-4">
               <li className="text-gray-700">
-                <span className="font-semibold">Top-of-the-Line Representation:</span> We are Texas' premier law firm specializing exclusively in NIL. We provide fierce legal advocacy to protect your rights, negotiate your contracts, and safeguard your eligibility.
+                <span className="font-semibold">Top-of-the-Line Representation:</span> We are Texas&apos; premier law firm specializing exclusively in NIL. We provide fierce legal advocacy to protect your rights, negotiate your contracts, and safeguard your eligibility.
               </li>
               <li className="text-gray-700">
                 <span className="font-semibold">Paving Your Road to Generational Wealth:</span> We go beyond the signature on the deal. Our mission is to empower you with the knowledge and mentorship to transform NIL earnings into lasting financial freedom and business success.
@@ -45,11 +45,11 @@ export default function About() {
           <div className="bg-brand-navy text-white p-8 rounded-lg">
             <h2 className="text-3xl font-bold mb-6">Your Journey Starts Here</h2>
             <p className="text-slate-100 mb-4">
-              You've dedicated your life to excellence on the field. Now, let us help you apply that same discipline to building your legacy off it.
+              You&apos;ve dedicated your life to excellence on the field. Now, let us help you apply that same discipline to building your legacy off it.
               Ready to build more than just a brand? Contact Us today to begin the journey.
             </p>
             <Link href="/signup"
-            className="btn-primary !bg-slate-700">
+            className="btn-primary \!bg-slate-700">
                 Get Started!
             </Link>
             <p className="text-slate-200 text-sm mt-4">
@@ -138,9 +138,9 @@ export default function About() {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-slate-700 p-6 rounded-lg">
               <p className="text-slate-100 mb-4 italic">
-                "This platform completely transformed how I manage my NIL deals. The legal
+                &quot;This platform completely transformed how I manage my NIL deals. The legal
                 guidance and financial tools are absolutely essential for any student
-                athlete."
+                athlete.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-500 rounded-full"></div>
@@ -152,8 +152,8 @@ export default function About() {
             </div>
             <div className="bg-slate-700 p-6 rounded-lg">
               <p className="text-slate-100 mb-4 italic">
-                "Finally, a solution built specifically for athletes. This team understands our
-                unique challenges and provides expert support every step of the way."
+                &quot;Finally, a solution built specifically for athletes. This team understands our
+                unique challenges and provides expert support every step of the way.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-500 rounded-full"></div>
@@ -165,9 +165,9 @@ export default function About() {
             </div>
             <div className="bg-slate-700 p-6 rounded-lg">
               <p className="text-slate-100 mb-4 italic">
-                "The resources and educational content helped me navigate complex
+                &quot;The resources and educational content helped me navigate complex
                 contracts with confidence. I recommend this to every athlete
-                serious about their NIL opportunities."
+                serious about their NIL opportunities.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-500 rounded-full"></div>

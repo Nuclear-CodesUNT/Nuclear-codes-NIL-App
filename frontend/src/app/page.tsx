@@ -1,15 +1,17 @@
+import Link from 'next/link'
+import Image from 'next/image'
 export default async function Home() {
   return (
   <>
     <header className="w-full bg-white h-[64.8px] flex items-center border-b border-gray-200">
-  <div className="max-w-[1280px] w-full mx-auto flex items-center justify-between px-4">
+  <div className="max-w-\[1280px\] w-full mx-auto flex items-center justify-between px-4">
 
     
     {/** LEFT — Logo / Brand **/}
     <div className="flex items-center">
-      <a href="/" className="text-xl font-bold text-black">
+      <Link href="/" className="text-xl font-bold text-black">
         NIL Connect
-      </a>
+      </Link>
     </div>
 
     {/** CENTER — Navigation (3 clickable links) **/}
@@ -18,8 +20,10 @@ export default async function Home() {
         href="/athletes" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <img src="/For Athletes.svg" 
+        <Image src="/For Athletes.svg" 
         alt="" 
+        width={20}
+        height={20}
         className="w-5 h-5" />
         <span>For Athletes</span>
       </a>
@@ -28,8 +32,10 @@ export default async function Home() {
         href="/brands" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <img src="/For Brands.svg" 
+        <Image src="/For Brands.svg" 
         alt="" 
+        width={20}
+        height={20}
         className="w-5 h-5" />
         <span>For Brands</span>
       </a>
@@ -38,8 +44,10 @@ export default async function Home() {
         href="/contact" 
         className="flex items-center gap-2 text-black hover:text-gray-600 transition"
       >
-        <img src="/Contact.svg" 
+        <Image src="/Contact.svg" 
         alt="" 
+        width={20}
+        height={20}
         className="w-5 h-5" />
         <span>Contact</span>
       </a>
@@ -50,18 +58,22 @@ export default async function Home() {
 
   {/* Apps */}
   <a href="/apps" className="hover:opacity-80 transition">
-    <img 
+    <Image 
       src="/Message Board.svg" 
       alt="Apps" 
+      width={20}
+      height={20}
       className="w-5 h-5"
     />
   </a>
 
   {/* Messages */}
   <a href="/messages" className="relative hover:opacity-80 transition">
-    <img 
+    <Image 
       src="/Notifications.svg" 
       alt="Messages" 
+      width={20}
+      height={20}
       className="w-5 h-5"
     />
     <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
@@ -70,29 +82,38 @@ export default async function Home() {
   </a>
 
   {/* Account */}
-  <a href="/account" className="hover:opacity-80 transition">
-    <img 
+  <a href="/profile" className="hover:opacity-80 transition">
+    <Image 
       src="/Profiles.svg" 
       alt="Account" 
+      width={20}
+      height={20}
       className="w-5 h-5"
     />
   </a>
 
   {/* Get Started button */}
-  <a 
-    href="/get-started" 
+  <Link 
+    href="/signup" 
     className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
   >
     Get Started
-  </a>
+  </Link>
+
+  <Link 
+    href="/login" 
+    className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
+  >
+    Sign In
+  </Link>
 
   </div>
 
   </div>
 </header>
 
-<section className="w-full bg-gradient-to-br from-[#EEF4FF] to-[#DCE8FF] py-20">
-  <div className="max-w-[1280px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center px-4">
+<section className="w-full bg-linear-to-br from-[#EEF4FF] to-[#DCE8FF] py-20">
+  <div className="max-w-\[1280px\] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center px-4">
 
     {/* LEFT — Text */}
     <div>
@@ -134,8 +155,8 @@ export default async function Home() {
       <div className="absolute bottom-4 right-20 w-40 h-40 bg-blue-300 opacity-40 rounded-full pointer-events-none"></div>
 
       {/* Main Image Card */}
-      <div className="bg-white rounded-xl shadow-xl p-4 max-w-[584px] w-full">
-        <img 
+      <div className="bg-white rounded-xl shadow-xl p-4 max-w-\[584px\] w-full">
+        <Image 
           src="/logo/NIL Law.svg"
           alt="NIL Law logo"
           width={450}
@@ -150,7 +171,7 @@ export default async function Home() {
 
 
 <section className="w-full bg-white py-24">
-  <div className="max-w-[1280px] w-full mx-auto text-center px-4">
+  <div className="max-w-\[1280px\] w-full mx-auto text-center px-4">
 
 
     {/* MAIN HEADLINE */}
@@ -181,7 +202,7 @@ export default async function Home() {
 </section>
 
 <section className="w-full bg-white py-24">
-  <div className="max-w-[1216px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start px-4">
+  <div className="max-w-\[1216px\] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start px-4">
 
 
     {/* LEFT — Text */}
@@ -229,7 +250,7 @@ export default async function Home() {
 
       {/* MAIN IMAGE CARD */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <img
+        <Image
           src="/images/ImageWithFallback.svg"
           alt="Student athletes running"
           width={327}
