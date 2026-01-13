@@ -1,4 +1,4 @@
-import Link from 'next/link'
+//import Link from 'next/link'
 import Image from 'next/image'
 export default async function Home() {
   return (
@@ -9,9 +9,9 @@ export default async function Home() {
     
     {/** LEFT — Logo / Brand **/}
     <div className="flex items-center">
-      <Link href="/" className="text-xl font-bold text-black">
+      <p className="text-xl font-bold text-black">
         NIL Connect
-      </Link>
+      </p>
     </div>
 
     {/** CENTER — Navigation (3 clickable links) **/}
@@ -91,21 +91,6 @@ export default async function Home() {
       className="w-5 h-5"
     />
   </a>
-
-  {/* Get Started button */}
-  <Link 
-    href="/signup" 
-    className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
-  >
-    Get Started
-  </Link>
-
-  <Link 
-    href="/login" 
-    className="bg-[#1A3B8A] text-white px-5 py-2 rounded-md hover:bg-[#133069] transition"
-  >
-    Sign In
-  </Link>
 
   </div>
 
