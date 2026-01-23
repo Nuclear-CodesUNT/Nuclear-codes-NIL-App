@@ -2,52 +2,43 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
 
-// ================= Cache State (Performance Upgrade) =================
-// These variables store the S3 client so we don't assume a role on every request
-let cachedS3Client: S3Client | null = null;
-let tokenExpiration: Date | null = null;
-
 const getS3Client = async () => {
-  const now = new Date();
-  // Reuse client if token is valid (with 5 min buffer)
-  if (cachedS3Client && tokenExpiration && now.getTime() < tokenExpiration.getTime() - 5 * 60 * 1000) {
-    return cachedS3Client;
-  }
+  try {
+    // 1️⃣ STS Client to assume role
+    const stsClient = new STSClient({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      }
+    });
 
-  // 1️⃣ STS Client to assume role
-  const stsClient = new STSClient({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    const command = new AssumeRoleCommand({
+      RoleArn: process.env.AWS_ASSUME_ROLE_ARN!,
+      RoleSessionName: `UploadSession-${Date.now()}`,
+      DurationSeconds: parseInt(process.env.AWS_STS_DURATION || '900'),
+    });
+
+    const response = await stsClient.send(command);
+
+    if (!response.Credentials) {
+      throw new Error('Failed to obtain temporary credentials from STS');
     }
-  });
 
-  const command = new AssumeRoleCommand({
-    RoleArn: process.env.AWS_ASSUME_ROLE_ARN!,
-    RoleSessionName: `UploadSession-${Date.now()}`,
-    DurationSeconds: parseInt(process.env.AWS_STS_DURATION || '900'),
-  });
-
-  const response = await stsClient.send(command);
-
-  if (!response.Credentials) {
-    throw new Error('Failed to obtain temporary credentials');
+    // 2️⃣ Create S3 client using temporary credentials
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: response.Credentials.AccessKeyId!,
+        secretAccessKey: response.Credentials.SecretAccessKey!,
+        sessionToken: response.Credentials.SessionToken!,
+      },
+    });
+    return s3Client;
+  } catch (error) {
+    console.error('Error in getS3Client:', error);
+    throw error;
   }
-
-  tokenExpiration = response.Credentials.Expiration || new Date(Date.now() + 900 * 1000);
-
-  // 2️⃣ Create S3 client using temporary credentials
-  cachedS3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: response.Credentials.AccessKeyId!,
-      secretAccessKey: response.Credentials.SecretAccessKey!,
-      sessionToken: response.Credentials.SessionToken!,
-    },
-  });
-
-  return cachedS3Client;
 };
 
 
