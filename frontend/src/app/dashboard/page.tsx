@@ -3,8 +3,8 @@ import FeedCard from '../../components/dashboard-feedCard';
 import MessagesOverview from '../../components/dashboard-messages';
 import ContractsOverview from '../../components/dashboard-contracts';
 import { ScrollArea } from '../../components/ui/scroll-area';
-import Image from 'next/image';
-import Link from 'next/link';
+//import Image from 'next/image';
+//import Link from 'next/link';
 
 const feedData = [
   {
@@ -24,11 +24,11 @@ const feedData = [
 export default function Dashboard() {
     return (
     <div className="min-h-screen bg-white">      
-      <div className="flex gap-6 p-6 max-w-[1600px] mx-auto">
+      <div className="flex gap-6 p-6 max-w-\[1600px\] mx-auto">
         {/* Main Feed - Left Side */}
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-4 max-w-[700px] mx-auto">
+            <div className="space-y-4 pr-4 max-w-\[700px\] mx-auto">
               {feedData.map((post) => (
                 <FeedCard key={post.id} {...post} />
               ))}
