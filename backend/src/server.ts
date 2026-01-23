@@ -5,7 +5,8 @@ import mongoose from 'mongoose';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
-import authRoutes from './routes/auth.js'; 
+import authRoutes from './routes/auth.js';
+import videoRoutes from './routes/videoRoutes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
@@ -36,7 +37,8 @@ app.use(session({
   }
 }));
 
-//routes
+// routes
 app.use('/api/auth', authRoutes);
+app.use('/api/videos', videoRoutes); 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
