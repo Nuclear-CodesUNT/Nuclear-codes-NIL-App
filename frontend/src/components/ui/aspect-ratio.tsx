@@ -1,6 +1,7 @@
 "use client";
 
-import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio@1.1.2";
+// @ts-expect-error - The type definitions for this package are not available.
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio";
 
 function AspectRatio({
   ...props
