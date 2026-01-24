@@ -8,3 +8,4 @@ backend/build
 
 .env*
 .env.local
+GEMINI.md

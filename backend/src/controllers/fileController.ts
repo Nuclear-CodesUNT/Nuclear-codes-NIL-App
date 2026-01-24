@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import fileService from '../services/fileService.js';
+import Contract from '../models/Contract.js';
 
 // Multer memory storage (no disk)
 const upload = multer({
@@ -23,11 +24,25 @@ const uploadFile = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
+    if (!req.session.userId) {
+       return res.status(401).json({ success: false, message: 'Unauthorized: No user session found' });
+    }
+
     const s3Url = await fileService.uploadFileToS3(req.file);
+
+    // Create MongoDB Record
+    const newContract = await Contract.create({
+      user: req.session.userId,
+      fileName: req.file.originalname,
+      fileUrl: s3Url,
+      fileSize: req.file.size,
+      status: 'Pending'
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'File uploaded to S3!',
+      message: 'File uploaded to S3 and contract created!',
+      contract: newContract,
       s3Url,
     });
   } catch (err: any) {
