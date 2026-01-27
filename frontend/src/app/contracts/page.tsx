@@ -246,41 +246,64 @@ export default function ContractUploadForm() {
           </div>
 
           {/* Preview Area */}
-          {previewUrl && (
-            <div className={`bg-gray-100 border border-gray-200 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 flex flex-col bg-gray-900 p-4' : 'relative'}`}>
-              {isFullscreen && (
-                <div className="flex justify-end mb-4">
-            <button onClick={() => setIsFullscreen(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg">
-              Close Fullscreen
-            </button>
-                </div>
-              )}
-
-              <div className="bg-white border-b px-4 py-2 flex justify-between items-center">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">File Preview</span>
-                <button onClick={() => setIsFullscreen(!isFullscreen)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
-            {isFullscreen ? 'Exit Fullscreen' : 'Expand View'}
-                </button>
-              </div>
-
-              <div className={`bg-gray-50 flex items-center justify-center ${isFullscreen ? 'flex-1' : 'h-[500px]'}`}>
-                {file.type === 'application/pdf' ? (
-            <embed src={previewUrl} type="application/pdf" className="w-full h-full" />
-                ) : file.type.startsWith('image/') ? (
-            <img src={previewUrl} alt="Preview" className="max-w-full max-h-full object-contain" />
-                ) : (
-            <div className="text-center p-8">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-900 font-medium">No preview available</p>
-              <p className="text-gray-500 text-sm mb-4">This file type cannot be previewed in the browser.</p>
-              <a href={previewUrl} download={file.name} className="text-blue-600 hover:underline">
-                Download file
-              </a>
-            </div>
+            {previewUrl && (
+              <div className={`bg-gray-100 border border-gray-200 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 flex flex-col bg-gray-900 p-4' : 'relative'}`}>
+                
+                {/* 1. The Overlay "Close" Button (Keep this style) */}
+                {isFullscreen && (
+                    <div className="flex justify-end mb-4">
+                        <button 
+                            onClick={() => setIsFullscreen(false)} 
+                            className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                            Close Fullscreen
+                        </button>
+                    </div>
                 )}
+                
+                {/* 2. The Header Bar */}
+                <div className={`bg-white border-b px-4 py-2 flex justify-between items-center ${isFullscreen ? 'rounded-t-lg' : ''}`}>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">File Preview</span>
+                  
+                    {/* Only show "Expand View" here. If fullscreen, the top button handles closing. */}
+                    {!isFullscreen && (
+                        <button 
+                            onClick={() => setIsFullscreen(true)}
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                            {/* Optional: Add an Expand icon here if you want */}
+                            Expand View
+                        </button>
+                    )}
+                </div>
+          
+                {/* 3. The Content Area */}
+                <div className={`bg-gray-50 flex items-center justify-center ${isFullscreen ? 'flex-1' : 'h-125'}`}>
+                    {/* ... (existing content logic: pdf, image, fallback) ... */}
+                    {file.type === 'application/pdf' ? (
+                    <embed
+                        src={previewUrl}
+                        type="application/pdf"
+                        className="w-full h-full"
+                    />
+                    ) : file.type.startsWith('image/') ? (
+                    <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="max-w-full max-h-full object-contain"
+                    />
+                    ) : (
+                    <div className="text-center p-8">
+                        <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-900 font-medium">No preview available</p>
+                        <p className="text-gray-500 text-sm mb-4">This file type cannot be previewed in the browser.</p>
+                        <a href={previewUrl} download={file.name} className="text-blue-600 hover:underline">Download file</a>
+                    </div>
+                    )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Action Footer */}
           <div className="flex justify-end gap-3 pt-4 border-t">
@@ -291,7 +314,7 @@ export default function ContractUploadForm() {
               onClick={() => setIsConfirmModalOpen(true)}
               disabled={!file || uploadStatus === 'uploading'}
               className={`px-6 py-2 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2 ${
-                !file || uploadStatus === 'uploading' ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                !file || uploadStatus === 'uploading' ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'btn-primary'
               }`}
             >
               {uploadStatus === 'uploading' ? (
@@ -329,7 +352,7 @@ export default function ContractUploadForm() {
             <button onClick={() => setIsConfirmModalOpen(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">
               Cancel
             </button>
-            <button onClick={handleSubmitContract} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button onClick={handleSubmitContract} className="btn-primary">
               Confirm Submission
             </button>
                 </div>

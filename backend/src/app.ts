@@ -5,7 +5,8 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
-import uploadRouter from './routes/upload.js'; 
+import uploadRouter from './routes/upload.js';
+import contractsRouter from './routes/contracts.js'; 
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -30,5 +31,6 @@ app.use(session({
 //routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRouter);
+app.use('/api/contracts', contractsRouter);
 
 export default app;

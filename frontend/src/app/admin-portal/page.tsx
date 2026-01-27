@@ -10,10 +10,12 @@ import { ContentManager } from "../../components/content-manager";
 import { ContractsTable } from "../../components/contracts-table";
 
 export default function App() {
-  const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeSection, setActiveSection] = useState("contracts");
 
   const getSectionTitle = () => {
     switch (activeSection) {
+      case "contracts":
+        return "Contract Management";
       case "dashboard":
         return "Dashboard";
       case "players":
@@ -22,8 +24,6 @@ export default function App() {
         return "Coach Management";
       case "content":
         return "Financial Literacy Content";
-      case "contracts":
-        return "Contract Management";
       default:
         return "Dashboard";
     }
@@ -31,6 +31,8 @@ export default function App() {
 
   const renderSection = () => {
     switch (activeSection) {
+      case "contracts":
+        return <ContractsTable />;
       case "dashboard":
         return <DashboardOverview />;
       case "players":
@@ -39,8 +41,6 @@ export default function App() {
         return <CoachesTable />;
       case "content":
         return <ContentManager />;
-      case "contracts":
-        return <ContractsTable />;
       default:
         return <DashboardOverview />;
     }
