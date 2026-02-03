@@ -3,100 +3,7 @@ import Image from 'next/image'
 export default async function Home() {
   return (
   <>
-    <header className="w-full bg-white h-[64.8px] flex items-center border-b border-gray-200">
-  <div className="max-w-\[1280px\] w-full mx-auto flex items-center justify-between px-4">
-
     
-    {/** LEFT — Logo / Brand **/}
-    <div className="flex items-center">
-      <p className="text-xl font-bold text-black">
-        NIL Connect
-      </p>
-    </div>
-
-    {/** CENTER — Navigation (3 clickable links) **/}
-    <nav className="flex items-center justify-center gap-10">
-      <a 
-        href="/athletes" 
-        className="flex items-center gap-2 text-black hover:text-gray-600 transition"
-      >
-        <Image src="/For Athletes.svg" 
-        alt="" 
-        width={20}
-        height={20}
-        className="w-5 h-5" />
-        <span>For Athletes</span>
-      </a>
-
-      <a 
-        href="/brands" 
-        className="flex items-center gap-2 text-black hover:text-gray-600 transition"
-      >
-        <Image src="/For Brands.svg" 
-        alt="" 
-        width={20}
-        height={20}
-        className="w-5 h-5" />
-        <span>For Brands</span>
-      </a>
-
-      <a 
-        href="/contact" 
-        className="flex items-center gap-2 text-black hover:text-gray-600 transition"
-      >
-        <Image src="/Contact.svg" 
-        alt="" 
-        width={20}
-        height={20}
-        className="w-5 h-5" />
-        <span>Contact</span>
-      </a>
-    </nav>
-
-    {/** RIGHT — Icons + CTA button (all clickable) **/}
-    <div className="flex justify-end items-center gap-6">
-
-  {/* Apps */}
-  <a href="/apps" className="hover:opacity-80 transition">
-    <Image 
-      src="/Message Board.svg" 
-      alt="Apps" 
-      width={20}
-      height={20}
-      className="w-5 h-5"
-    />
-  </a>
-
-  {/* Messages */}
-  <a href="/messages" className="relative hover:opacity-80 transition">
-    <Image 
-      src="/Notifications.svg" 
-      alt="Messages" 
-      width={20}
-      height={20}
-      className="w-5 h-5"
-    />
-    <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
-      3
-    </span>
-  </a>
-
-  {/* Account */}
-  <a href="/profile" className="hover:opacity-80 transition">
-    <Image 
-      src="/Profiles.svg" 
-      alt="Account" 
-      width={20}
-      height={20}
-      className="w-5 h-5"
-    />
-  </a>
-
-  </div>
-
-  </div>
-</header>
-
 <section className="w-full bg-linear-to-br from-[#EEF4FF] to-[#DCE8FF] py-20">
   <div className="max-w-\[1280px\] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center px-4">
 
@@ -114,14 +21,14 @@ export default async function Home() {
 
       <div className="flex gap-4 flex-wrap">
         <a 
-          href="/athletes"
+          href="/signup"
           className="bg-[#1A3B8A] text-white px-6 py-3 rounded-md font-medium hover:bg-[#133069] transition"
         >
           Join as Athlete
         </a>
 
         <a 
-          href="/brands"
+          href="/signup"
           className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition"
         >
           Partner as Brand
@@ -132,12 +39,6 @@ export default async function Home() {
 
     {/* RIGHT — Image + Decorative Circles */}
     <div className="relative flex justify-center items-center">
-
-      {/* Yellow Circle — matches Figma top-right placement */}
-      <div className="absolute -top-10 -right-10 w-28 h-28 bg-yellow-300 opacity-70 rounded-full pointer-events-none"></div>
-
-      {/* Blue Circle — matches Figma bottom-right placement */}
-      <div className="absolute bottom-4 right-20 w-40 h-40 bg-blue-300 opacity-40 rounded-full pointer-events-none"></div>
 
       {/* Main Image Card */}
       <div className="bg-white rounded-xl shadow-xl p-4 max-w-\[584px\] w-full">
