@@ -4,6 +4,8 @@ import type { Express } from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
 import authRoutes from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
 import contractsRouter from './routes/contracts.js'; 
@@ -27,6 +29,9 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24 // 1 day
   }
 }));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //routes
 app.use('/api/auth', authRoutes);
