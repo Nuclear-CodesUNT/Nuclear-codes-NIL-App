@@ -8,6 +8,10 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import videoRoutes from './routes/videoRoutes.js';
 
+import progressRoutes from "./routes/progressRoutes.js";
+import bookmarkRoutes from "./routes/bookmarkRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -40,5 +44,9 @@ app.use(session({
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes); 
+
+app.use("/api/progress", progressRoutes);
+app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
