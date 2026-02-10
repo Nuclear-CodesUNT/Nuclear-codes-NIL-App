@@ -8,7 +8,9 @@ export async function isLawyer(req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ message: "You must be logged in to access this." });
     }
 
-    const user = await User.findById(req.session.userId).select("role");
+    const userId = req.session.userId.toString();
+    const user = await User.findById(userId).select("role");
+
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
