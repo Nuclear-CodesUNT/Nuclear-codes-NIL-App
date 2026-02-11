@@ -3,12 +3,15 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IVideo extends Document {
   title: string;
   description?: string;
-  videoUrl: string;
 
-   s3Key?: string;
+  videoUrl: string;
+  s3Key: string;
 
   thumbnailUrl?: string;
+  thumbnailKey?: string;
+
   durationSeconds?: number;
+
   status: "draft" | "published" | "archived";
   createdAt: Date;
   updatedAt: Date;
@@ -20,10 +23,11 @@ const VideosSchema = new Schema<IVideo>(
     description: { type: String, default: "" },
 
     videoUrl: { type: String, required: true },
-
     s3Key: { type: String, required: true },
 
     thumbnailUrl: { type: String, default: "" },
+    thumbnailKey: { type: String, default: "" },
+
     durationSeconds: { type: Number, default: 0 },
 
     status: {
@@ -32,9 +36,7 @@ const VideosSchema = new Schema<IVideo>(
       default: "draft",
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model<IVideo>("Videos", VideosSchema);

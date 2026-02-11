@@ -1,40 +1,49 @@
-import { Router, Request, Response } from 'express';
-import multer from 'multer';
-import AWS from 'aws-sdk';
-import Video from '../models/Videos.js';
+import { Router, Request, Response } from "express";
+import multer from "multer";
+
+import Video from "../models/Videos.js";
+import { getAssumedS3 } from "../utils/aws.js";
+import { writeTempFile, getDurationSeconds, generateThumbnail, cleanupFiles } from "../utils/media.js";
 
 const router = Router();
 
-// Multer memory storage (no disk)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || "10485760", 10),
   },
   fileFilter: (req, file, cb) => {
-    // Allowed MIME types (from .env or fallback)
     const allowedTypes = (
-      process.env.ALLOWED_FILE_TYPES || 'video/mp4,video/quicktime,video/webm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      process.env.ALLOWED_FILE_TYPES ||
+      [
+        // videos
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        // docs
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        // fallback for some clients
+        "application/octet-stream",
+      ].join(",")
     )
-      .split(',')
-      .map((type) => type.trim());
+      .split(",")
+      .map((t) => t.trim());
 
-    // Allowed extensions (extra safety)
-    const allowedExt = ['mp4', 'mov', 'webm', 'pdf', 'doc', 'docx'];
-    const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+    const allowedExt = ["mp4", "mov", "webm", "pdf", "doc", "docx"];
+    const ext = (file.originalname.split(".").pop() || "").toLowerCase();
 
-    // Validate extension first
     if (!allowedExt.includes(ext)) {
       return cb(
-        new Error('Invalid file extension. Only PDF, DOC, DOCX, .mp4, .mov, and .webm allowed.'),
+        new Error("Invalid file extension. Allowed: .pdf, .doc, .docx, .mp4, .mov, .webm."),
         false
       );
     }
 
-    // Validate MIME type
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(
-        new Error('Invalid file type. Only MP4, MOV, WEBM allowed.'),
+        new Error(`Invalid file type (${file.mimetype}). Allowed: PDF/DOC/DOCX/MP4/MOV/WEBM.`),
         false
       );
     }
@@ -43,77 +52,101 @@ const upload = multer({
   },
 });
 
-// ================= Upload Endpoint =================
-router.post('/', upload.single('file'), async (req: Request, res: Response) => {
+router.post("/", upload.single("file"), async (req: Request, res: Response) => {
+  let tempVideoPath: string | null = null;
+  let tempThumbPath: string | null = null;
+
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+      return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    // 1️⃣ Assume role (requires AWS_ASSUME_ROLE_ARN to be an IAM Role ARN)
-    const sts = new AWS.STS({
-      region: process.env.AWS_REGION,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    });
+    const s3 = await getAssumedS3();
+    const bucket = process.env.S3_BUCKET_NAME!;
+    const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
+    const isVideo = ["mp4", "mov", "webm"].includes(ext);
 
-    const assumeRoleResult = await sts.assumeRole({
-      RoleArn: process.env.AWS_ASSUME_ROLE_ARN!,
-      RoleSessionName: `UploadSession-${Date.now()}`,
-      DurationSeconds: parseInt(process.env.AWS_STS_DURATION || '900', 10),
-    }).promise();
-
-    // 2️⃣ Create S3 client using temporary credentials
-    const s3 = new AWS.S3({
-      region: process.env.AWS_REGION,
-      accessKeyId: assumeRoleResult.Credentials!.AccessKeyId,
-      secretAccessKey: assumeRoleResult.Credentials!.SecretAccessKey,
-      sessionToken: assumeRoleResult.Credentials!.SessionToken,
-    });
-
-    // 3️⃣ Upload to S3
+    // Upload file to S3
     const key = `uploads/${Date.now()}-${req.file.originalname}`;
-    const uploadResult = await s3.upload({
-      Bucket: process.env.S3_BUCKET_NAME!,
-      Key: key,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
-    }).promise();
+    const uploadResult = await s3
+      .upload({
+        Bucket: bucket,
+        Key: key,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      })
+      .promise();
 
-    // 4️⃣ Save video metadata to MongoDB
+    // If it's not a video, return S3 info only (no Video doc)
+    if (!isVideo) {
+      return res.status(200).json({
+        success: true,
+        message: "File uploaded to S3!",
+        s3Url: uploadResult.Location,
+        key,
+      });
+    }
+
+    // For videos: compute duration + thumbnail
+    tempVideoPath = await writeTempFile(req.file.buffer, req.file.originalname);
+    const durationSeconds = await getDurationSeconds(tempVideoPath);
+
+    tempThumbPath = await generateThumbnail(tempVideoPath);
+
+    // Upload thumbnail to S3
+    const thumbKey = `thumbnails/${Date.now()}-${req.file.originalname.replace(/\.[^/.]+$/, "")}.jpg`;
+    const thumbBuffer = await (await import("fs/promises")).readFile(tempThumbPath);
+
+    const thumbUpload = await s3
+      .upload({
+        Bucket: bucket,
+        Key: thumbKey,
+        Body: thumbBuffer,
+        ContentType: "image/jpeg",
+      })
+      .promise();
+
+    // Create Video record
     const titleFromName =
-      req.body.title ||
-      req.file.originalname.replace(/\.[^/.]+$/, ""); // strip extension
+      (req.body.title as string) || req.file.originalname.replace(/\.[^/.]+$/, "");
 
     const createdVideo = await Video.create({
       title: titleFromName,
-      description: req.body.description || "",
+      description: (req.body.description as string) || "",
       videoUrl: uploadResult.Location,
-      thumbnailUrl: req.body.thumbnailUrl || "",
-      durationSeconds: req.body.durationSeconds
-        ? Number(req.body.durationSeconds)
-        : 0,
-       s3Key: key,
-      status: req.body.status || "draft",
+      s3Key: key,
+      thumbnailUrl: thumbUpload.Location,
+      thumbnailKey: thumbKey,
+      durationSeconds,
+      status: (req.body.status as any) || "draft",
     });
+
+    // Cleanup temp files
+    await cleanupFiles([tempVideoPath, tempThumbPath]);
 
     return res.status(200).json({
       success: true,
-      message: 'File uploaded to S3 and saved to DB!',
+      message: "Video uploaded to S3 and saved to DB!",
       s3Url: uploadResult.Location,
       key,
+      thumbnailUrl: thumbUpload.Location,
+      thumbnailKey: thumbKey,
+      durationSeconds,
       video: createdVideo,
     });
-
   } catch (err: any) {
+    // Cleanup temp files if we created them
+    if (tempVideoPath || tempThumbPath) {
+      await cleanupFiles([tempVideoPath || "", tempThumbPath || ""]);
+    }
     return res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // Multer error handler
 router.use((err: any, req: Request, res: Response, next: any) => {
-  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ success: false, message: 'File too large' });
+  if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ success: false, message: "File too large" });
   }
   return res.status(500).json({ success: false, message: err.message });
 });
