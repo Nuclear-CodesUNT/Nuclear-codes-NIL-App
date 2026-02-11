@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import AWS from 'aws-sdk';
+import Video from '../models/Videos.js';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Allowed MIME types (from .env or fallback)
     const allowedTypes = (
-      process.env.ALLOWED_FILE_TYPES || 'video/mp4,video/quicktime,video/webm, application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      process.env.ALLOWED_FILE_TYPES || 'video/mp4,video/quicktime,video/webm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
       .split(',')
       .map((type) => type.trim());
@@ -79,11 +80,29 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
       ContentType: req.file.mimetype,
     }).promise();
 
+    // 4️⃣ Save video metadata to MongoDB
+    const titleFromName =
+      req.body.title ||
+      req.file.originalname.replace(/\.[^/.]+$/, ""); // strip extension
+
+    const createdVideo = await Video.create({
+      title: titleFromName,
+      description: req.body.description || "",
+      videoUrl: uploadResult.Location,
+      thumbnailUrl: req.body.thumbnailUrl || "",
+      durationSeconds: req.body.durationSeconds
+        ? Number(req.body.durationSeconds)
+        : 0,
+       s3Key: key,
+      status: req.body.status || "draft",
+    });
+
     return res.status(200).json({
       success: true,
-      message: 'File uploaded to S3!',
+      message: 'File uploaded to S3 and saved to DB!',
       s3Url: uploadResult.Location,
       key,
+      video: createdVideo,
     });
 
   } catch (err: any) {
