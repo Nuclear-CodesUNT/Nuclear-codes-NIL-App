@@ -1,6 +1,8 @@
 import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+// If it's in a subfolder named 'components'
+import DocuSignViewer from '@/components/DocuSignViewer';
 
 interface ContractStats {
   pending: number;

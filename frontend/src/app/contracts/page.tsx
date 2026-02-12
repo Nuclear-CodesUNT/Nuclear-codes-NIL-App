@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Upload, FileText, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Upload, FileText, X, CheckCircle, Clock, AlertCircle, PenTool } from 'lucide-react'; // Added PenTool icon
 import api from '@/lib/api';
+// 1. IMPORT YOUR DOCUSIGN COMPONENT
+import DocuSignViewer from '@/components/DocuSignViewer';
 
 interface SubmittedFile {
   id: string;
@@ -22,6 +24,9 @@ export default function ContractUploadForm() {
   
   // State for the side table
   const [submittedFiles, setSubmittedFiles] = useState<SubmittedFile[]>([]);
+
+  // 2. NEW STATE: Track which file is currently being signed
+  const [signingFile, setSigningFile] = useState<SubmittedFile | null>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -53,34 +58,6 @@ export default function ContractUploadForm() {
     setFile(selectedFile);
     setUploadStatus('idle'); // Reset status for new file
     displayFile(selectedFile);
-    // await uploadFile(selectedFile);
-  };
-
-  const uploadFile = async (fileToUpload: File) => {
-    setUploadStatus('uploading');
-    const formData = new FormData();
-    formData.append("file", fileToUpload);
-
-    try {
-      const response = await api.post('/upload', formData);
-
-      if (!process.env.NEXT_PUBLIC_BACKEND_API_URL) {
-         await new Promise(resolve => setTimeout(resolve, 1500)); // Fake delay
-         setUploadStatus('success');
-         return;
-      }
-
-      const result = response.data;
-      if (result.success) {
-        setUploadStatus('success');
-      } else {
-        setUploadStatus('error');
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      // Fallback for demo if fetch fails (e.g. no backend running)
-      setUploadStatus('error'); 
-    }
   };
 
   const displayFile = (fileToUpload: File) => {
@@ -102,19 +79,32 @@ export default function ContractUploadForm() {
     if (!file) return;
     setIsConfirmModalOpen(false);
     setUploadStatus('uploading');
-    //create formdata
+    
     const formData = new FormData();
-    //append file to form data
     formData.append('file', file);
 
     try {
-      //post formdata to backend
+      // Fake backend call for demo purposes if API fails or is not set up
+      // Remove this timeout block if your API is actually running
+      if (!process.env.NEXT_PUBLIC_BACKEND_API_URL) {
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         const newSubmission: SubmittedFile = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            size: file.size,
+            status: 'Pending',
+            submittedAt: new Date(),
+         };
+         setUploadStatus('success');
+         setSubmittedFiles(prev => [newSubmission, ...prev]);
+         removeFile();
+         return;
+      }
+
       const response = await api.post('/upload', formData);
-        //parse response
       const data = response.data;
 
       if (data.success) {
-        //creat submisison
         const newSubmission: SubmittedFile = {
         id: data.contract._id,
         name: file.name,
@@ -124,23 +114,16 @@ export default function ContractUploadForm() {
       };
       setUploadStatus('success');
       setSubmittedFiles(prev => [newSubmission, ...prev]);
-        // Reset form after submission
       removeFile();
     } else {
         alert(data.message)
       }
-        
-      
-      
-      
     }
     catch (error){
       console.error("Upload failed", error);
       setUploadStatus('error');
-      alert("An error has occured: ")
-      // show error message
+      alert("An error has occured during upload.")
     }
-    
   };
 
   return (
@@ -151,7 +134,7 @@ export default function ContractUploadForm() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
             {!file ? (
-              // Empty State - RESTORED ORIGINAL STYLING
+              // Empty State
               <div
           className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
             isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
@@ -196,7 +179,6 @@ export default function ContractUploadForm() {
             ) : (
               // File Selected State
               <div className="space-y-6">
-          {/* Header with status */}
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Review Contract</h3>
@@ -211,7 +193,7 @@ export default function ContractUploadForm() {
             </button>
           </div>
 
-          {/* Progress / Status Bar */}
+          {/* Status Bar */}
           <div
             className={`p-4 rounded-lg border ${
               uploadStatus === 'error'
@@ -249,7 +231,6 @@ export default function ContractUploadForm() {
             {previewUrl && (
               <div className={`bg-gray-100 border border-gray-200 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 flex flex-col bg-gray-900 p-4' : 'relative'}`}>
                 
-                {/* 1. The Overlay "Close" Button (Keep this style) */}
                 {isFullscreen && (
                     <div className="flex justify-end mb-4">
                         <button 
@@ -262,25 +243,20 @@ export default function ContractUploadForm() {
                     </div>
                 )}
                 
-                {/* 2. The Header Bar */}
                 <div className={`bg-white border-b px-4 py-2 flex justify-between items-center ${isFullscreen ? 'rounded-t-lg' : ''}`}>
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">File Preview</span>
                   
-                    {/* Only show "Expand View" here. If fullscreen, the top button handles closing. */}
                     {!isFullscreen && (
                         <button 
                             onClick={() => setIsFullscreen(true)}
                             className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                         >
-                            {/* Optional: Add an Expand icon here if you want */}
                             Expand View
                         </button>
                     )}
                 </div>
           
-                {/* 3. The Content Area */}
                 <div className={`bg-gray-50 flex items-center justify-center ${isFullscreen ? 'flex-1' : 'h-125'}`}>
-                    {/* ... (existing content logic: pdf, image, fallback) ... */}
                     {file.type === 'application/pdf' ? (
                     <embed
                         src={previewUrl}
@@ -330,35 +306,6 @@ export default function ContractUploadForm() {
               )}
             </button>
           </div>
-
-          {/* Confirmation Modal */}
-          {isConfirmModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-                {/* Header */}
-                <div className="p-6 border-b border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900">Confirm Submission</h3>
-                </div>
-
-                {/* Body */}
-                <div className="p-6">
-            <p className="text-gray-600">
-              Are you sure you want to submit <strong>{file?.name}</strong>? Once submitted, it will be sent to the admin team for review.
-            </p>
-                </div>
-
-                {/* Footer / Actions */}
-                <div className="flex justify-end gap-3 p-6 bg-gray-50">
-            <button onClick={() => setIsConfirmModalOpen(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">
-              Cancel
-            </button>
-            <button onClick={handleSubmitContract} className="btn-primary">
-              Confirm Submission
-            </button>
-                </div>
-              </div>
-            </div>
-          )}
               </div>
             )}
           </div>
@@ -397,6 +344,35 @@ export default function ContractUploadForm() {
                                 <span>{(contract.size / 1024 / 1024).toFixed(2)} MB</span>
                                 <span>{contract.submittedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
+
+                            {/* 3. UPDATED: Sign Button now opens in a new tab */}
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  // Call your backend to get the URL
+                                  const response = await fetch('http://localhost:4000/api/signing-url', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      signerEmail: 'user@example.com', 
+                                      signerName: 'John Doe' 
+                                    }),
+                                  });
+                                  
+                                  const data = await response.json();
+                                  if (data.signingUrl) {
+                                    // Open the URL in a new tab
+                                    window.open(data.signingUrl, '_blank');
+                                  }
+                                } catch (err) {
+                                  alert("Failed to start signing session.");
+                                }
+                              }}
+                              className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs py-2 rounded-md transition-colors"
+                            >
+                              <PenTool className="w-3 h-3" />
+                              Sign in New Tab
+                            </button>
                         </div>
                     ))
                 )}
@@ -411,6 +387,61 @@ export default function ContractUploadForm() {
         </div>
 
       </div>
+
+      {/* CONFIRMATION MODAL */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900">Confirm Submission</h3>
+            </div>
+            <div className="p-6">
+            <p className="text-gray-600">
+              Are you sure you want to submit <strong>{file?.name}</strong>? Once submitted, it will be sent to the admin team for review.
+            </p>
+            </div>
+            <div className="flex justify-end gap-3 p-6 bg-gray-50">
+            <button onClick={() => setIsConfirmModalOpen(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">
+              Cancel
+            </button>
+            <button onClick={handleSubmitContract} className="btn-primary">
+              Confirm Submission
+            </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. NEW MODAL: DOCUSIGN VIEWER */}
+      {signingFile && (
+         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+             
+             {/* Modal Header */}
+             <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+               <div>
+                 <h3 className="font-bold text-lg text-gray-800">Signing: {signingFile.name}</h3>
+                 <p className="text-xs text-gray-500">DocuSign Embedded Signing Session</p>
+               </div>
+               <button 
+                 onClick={() => setSigningFile(null)}
+                 className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+               >
+                 <X className="w-5 h-5 text-gray-500" />
+               </button>
+             </div>
+
+             {/* Modal Body (Where DocuSign loads) */}
+             <div className="flex-1 overflow-hidden relative">
+               <DocuSignViewer 
+                 signerEmail="user@example.com" // You can replace this with real user data later
+                 signerName="John Doe"
+               />
+             </div>
+           </div>
+         </div>
+      )}
+
     </div>
   );
 }

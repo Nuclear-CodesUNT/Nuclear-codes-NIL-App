@@ -9,6 +9,7 @@ import { swaggerSpec } from './config/swagger.js';
 import authRoutes from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
 import contractsRouter from './routes/contracts.js'; 
+import { createController } from './controllers/docusignController.js';
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -32,6 +33,9 @@ app.use(session({
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Controller
+app.post('/api/signing-url', createController);
 
 //routes
 app.use('/api/auth', authRoutes);
