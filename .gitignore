@@ -8,3 +8,4 @@ backend/build
 
 .env*
 .env.local
+backend/test_8mb.mp4
