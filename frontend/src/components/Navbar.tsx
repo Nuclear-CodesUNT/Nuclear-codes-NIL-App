@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navLinkClass = (path: string) => {
@@ -70,7 +70,7 @@ export default function NavBar() {
           >
             {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
-        ) : (
+        ) : !loading ? (
           <>
             <Link
               href="/signup"
@@ -85,7 +85,7 @@ export default function NavBar() {
               Sign In
             </Link>
           </>
-        )}
+        ) : null}
       </div>
     </nav>
   );

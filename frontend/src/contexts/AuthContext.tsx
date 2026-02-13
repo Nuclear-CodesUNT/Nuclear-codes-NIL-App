@@ -18,9 +18,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("nil-user");
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(getStoredUser);
   const [loading, setLoading] = useState(true);
+
+  // Sync user to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("nil-user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("nil-user");
+    }
+  }, [user]);
 
   const refreshUser = async () => {
     try {
