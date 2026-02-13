@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function App() {
   const router = useRouter();
+  const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   
@@ -187,7 +189,7 @@ export default function App() {
       if (!response.ok) {
         throw new Error(data.message || 'Signup failed');
       }
-
+      login(data);
       // Redirect to dashboard on success
       router.push('/dashboard');
     } catch (err: unknown) {

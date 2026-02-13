@@ -10,6 +10,7 @@ export const signup = async (req: Request, res: Response) => {
     return res.status(201).json({ 
       id: newUser._id, 
       name: newUser.name, 
+      email: newUser.email,
       role: newUser.role 
     });
 

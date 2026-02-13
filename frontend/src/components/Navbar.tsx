@@ -43,7 +43,7 @@ export default function NavBar() {
           <Link href="/about" className={navLinkClass("/about")}>
             <span>About</span>
           </Link>
-{user && (
+          {user && (
             <>
               <Link href="/profile" className={navLinkClass("/profile")}>
                 <span>Profile</span>
