@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import Contract from '../models/Contract.js';
 import Lawyer from '../models/Lawyer.js';
+import fileService from '../services/fileService.js';
 import { notifyLawyerViaSNS } from '../services/snsService.js';
 
 /**
@@ -14,12 +15,30 @@ export const getAllContracts = async (req: Request, res: Response): Promise<Resp
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    // Fetch all contracts with user details populated
     const contracts = await Contract.find()
       .populate('user', 'name email role')
       .sort({ submittedAt: -1 });
 
-    return res.status(200).json({ contracts });
+    const contractSyncStatus = await Promise.all(
+      contracts.map(async (contract) => ({
+        contract,
+        existsInBucket: await fileService.fileExistsInS3(contract.fileUrl),
+      }))
+    );
+
+    const staleContractIds = contractSyncStatus
+      .filter((item) => !item.existsInBucket)
+      .map((item) => item.contract._id);
+
+    if (staleContractIds.length > 0) {
+      await Contract.deleteMany({ _id: { $in: staleContractIds } });
+    }
+
+    const syncedContracts = contractSyncStatus
+      .filter((item) => item.existsInBucket)
+      .map((item) => item.contract);
+
+    return res.status(200).json({ contracts: syncedContracts });
   } catch (error: unknown) {
     console.error('Error fetching contracts:', error);
     return res.status(500).json({ message: 'Failed to fetch contracts' });
@@ -76,6 +95,35 @@ export const updateContractStatus = async (req: Request, res: Response): Promise
   } catch (error: unknown) {
     console.error('Error updating contract status:', error);
     return res.status(500).json({ message: 'Failed to update contract' });
+  }
+};
+
+export const deleteContract = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+    const contract = await Contract.findById(id);
+
+    if (!contract) {
+      return res.status(404).json({ message: 'Contract not found' });
+    }
+
+    await fileService.deleteFileFromS3(contract.fileUrl);
+
+    await Contract.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: 'Contract deleted successfully' });
+  } catch (error: unknown) {
+    console.error('Error deleting contract:', error);
+    const awsError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+    const statusCode = awsError.$metadata?.httpStatusCode;
+    if (statusCode === 403 || awsError.name === 'AccessDenied') {
+      return res.status(403).json({ message: 'Not authorized to delete file from S3' });
+    }
+    return res.status(500).json({ message: 'Failed to delete contract' });
   }
 };
 

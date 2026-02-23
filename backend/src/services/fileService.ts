@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
 
@@ -64,6 +64,50 @@ const uploadFileToS3 = async (file: Express.Multer.File) => {
   return uploadResult.Location;
 };
 
+const getObjectKeyFromUrl = (fileUrl: string): string => {
+  const parsedUrl = new URL(fileUrl);
+  return decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ''));
+};
+
+const fileExistsInS3 = async (fileUrl: string): Promise<boolean> => {
+  const s3 = await getS3Client();
+  const key = getObjectKeyFromUrl(fileUrl);
+
+  try {
+    await s3.send(
+      new HeadObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: key,
+      })
+    );
+    return true;
+  } catch (error: unknown) {
+    const awsError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+    const statusCode = awsError.$metadata?.httpStatusCode;
+    if (statusCode === 404 || awsError.name === 'NotFound' || awsError.name === 'NoSuchKey') {
+      return false;
+    }
+    if (statusCode === 403 || awsError.name === 'AccessDenied') {
+      return true;
+    }
+    throw error;
+  }
+};
+
+const deleteFileFromS3 = async (fileUrl: string): Promise<void> => {
+  const s3 = await getS3Client();
+  const key = getObjectKeyFromUrl(fileUrl);
+
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+    })
+  );
+};
+
 export default {
   uploadFileToS3,
+  fileExistsInS3,
+  deleteFileFromS3,
 };

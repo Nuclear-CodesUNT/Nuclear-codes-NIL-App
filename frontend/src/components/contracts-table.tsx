@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
-import { Eye, Download, Loader2 } from "lucide-react";
+import { Eye, Download, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -44,24 +44,31 @@ export function ContractsTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [deletingContract, setDeletingContract] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchContracts = useCallback(async (showInitialLoader = false) => {
+    try {
+      if (showInitialLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      const response = await api.get("/contracts");
+      setContracts(response.data.contracts);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch contracts:", err);
+      setError("Failed to load contracts");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get("/contracts");
-        setContracts(response.data.contracts);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch contracts:", err);
-        setError("Failed to load contracts");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContracts();
-  }, []);
+    fetchContracts(true);
+  }, [fetchContracts]);
 
   const getStatusColor = (status: ContractStatus) => {
     switch (status) {
@@ -132,6 +139,29 @@ export function ContractsTable() {
     window.open(fileUrl, "_blank");
   };
 
+  const handleDelete = async (contractId: string, fileName: string) => {
+    const shouldDelete = window.confirm(
+      `Delete "${fileName}"? This will remove the file from S3 and the contract record.`
+    );
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setDeletingContract(contractId);
+      await api.delete(`/contracts/${contractId}`);
+      setContracts((prev) => prev.filter((contract) => contract._id !== contractId));
+      setError(null);
+    } catch (err) {
+      console.error("Failed to delete contract:", err);
+      const message = (err as { response?: { data?: { message?: string } } }).response?.data
+        ?.message;
+      setError(message ?? "Failed to delete contract");
+    } finally {
+      setDeletingContract(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow">
@@ -163,9 +193,20 @@ export function ContractsTable() {
     <div className="bg-white rounded-lg shadow">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-lg text-brand-dark">All Contracts</h2>
-        <span className="text-sm text-gray-500">
-          {contracts.length} {contracts.length === 1 ? "contract" : "contracts"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            {contracts.length} {contracts.length === 1 ? "contract" : "contracts"}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchContracts(false)}
+            disabled={refreshing}
+            title="Refresh contracts"
+          >
+            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={16} />}
+          </Button>
+        </div>
       </div>
 
       {contracts.length === 0 ? (
@@ -249,6 +290,19 @@ export function ContractsTable() {
                       title="Download file"
                     >
                       <Download size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(contract._id, contract.fileName)}
+                      title="Delete contract"
+                      disabled={deletingContract === contract._id}
+                    >
+                      {deletingContract === contract._id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
                     </Button>
                   </div>
                 </TableCell>

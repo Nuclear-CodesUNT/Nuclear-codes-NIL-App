@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getAllContracts, getMyContracts, updateContractStatus, submitContract } from '../controllers/contractController.js';
+import {
+  deleteContract,
+  getAllContracts,
+  getMyContracts,
+  updateContractStatus,
+  submitContract,
+} from '../controllers/contractController.js';
 
 const router = Router();
 
@@ -14,5 +20,6 @@ router.get('/me', getMyContracts);
 
 // Update contract status (for admin review)
 router.patch('/:id/status', updateContractStatus);
+router.delete('/:id', deleteContract);
 
 export default router;
