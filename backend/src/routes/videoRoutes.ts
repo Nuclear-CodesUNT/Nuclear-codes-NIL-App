@@ -1,12 +1,19 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import Video from "../models/Videos.js";
 import { isLawyer } from "../middleware/isLawyer.js";
 import { getAssumedS3 } from "../utils/aws.js";
+import { getAllVideos, getVideoById } from "../controllers/videoControllers.js";
 
 const router = Router();
 
+// Public: list videos
+router.get("/", getAllVideos);
+
+// Public: get single video
+router.get("/:id", getVideoById);
+
 // DELETE /api/videos/:id  (lawyers only)
-router.delete("/:id", isLawyer, async (req: Request, res: Response) => {
+router.delete("/:id", isLawyer, async (req, res) => {
   try {
     const { id } = req.params;
 

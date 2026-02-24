@@ -3,9 +3,9 @@ frontend/node_modules
 .ts* 
 frontend/build
 frontend/.next
-
+login.json
 backend/build 
-
+cookies.txt
 .env*
 .env.local
 backend/test_8mb.mp4
