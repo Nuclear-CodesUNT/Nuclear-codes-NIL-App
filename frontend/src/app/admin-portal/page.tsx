@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { AdminSidebar } from "../../components/admin-sidebar"; 
 import { AdminHeader } from "../../components/admin-header";
-import { DashboardOverview } from "../../components/dashboard-overview";
 import { PlayersTable } from "../../components/players-table";
-import { CoachesTable } from "../../components/coaches-table";
-import { ContentManager } from "../../components/content-manager";
 import { ContractsTable } from "../../components/contracts-table";
 
 export default function App() {
@@ -16,16 +13,10 @@ export default function App() {
     switch (activeSection) {
       case "contracts":
         return "Contract Management";
-      case "dashboard":
-        return "Dashboard";
-      case "players":
-        return "Player Management";
-      case "coaches":
-        return "Coach Management";
-      case "content":
-        return "Financial Literacy Content";
+      case "users":
+        return "Users";
       default:
-        return "Dashboard";
+        return "Admin panel";
     }
   };
 
@@ -33,16 +24,10 @@ export default function App() {
     switch (activeSection) {
       case "contracts":
         return <ContractsTable />;
-      case "dashboard":
-        return <DashboardOverview />;
-      case "players":
+      case "users":
         return <PlayersTable />;
-      case "coaches":
-        return <CoachesTable />;
-      case "content":
-        return <ContentManager />;
-      default:
-        return <DashboardOverview />;
+      // default:
+      //   return <ContractsTable />;
     }
   };
 

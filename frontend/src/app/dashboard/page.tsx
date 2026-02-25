@@ -1,7 +1,6 @@
 "use client";
 import FeedCard from '../../components/dashboard-feedCard';
 import MessagesOverview from '../../components/dashboard-messages';
-import ContractsOverview from '../../components/dashboard-contracts';
 import { ScrollArea } from '../../components/ui/scroll-area';
 //import Image from 'next/image';
 //import Link from 'next/link';
@@ -39,7 +38,6 @@ export default function Dashboard() {
         {/* Sidebar - Right Side */}
         <div className="w-96 space-y-6">
           <MessagesOverview />
-          <ContractsOverview />
         </div>
       </div>
     </div>
