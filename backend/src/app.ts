@@ -9,6 +9,7 @@ import { swaggerSpec } from './config/swagger.js';
 import authRoutes from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
 import contractsRouter from './routes/contracts.js'; 
+import usersRouter from './routes/user.js';
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -37,5 +38,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRouter);
 app.use('/api/contracts', contractsRouter);
+app.use('/api/users', usersRouter);
 
 export default app;

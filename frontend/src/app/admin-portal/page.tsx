@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AdminSidebar } from "../../components/admin-sidebar"; 
 import { AdminHeader } from "../../components/admin-header";
-import { PlayersTable } from "../../components/players-table";
+import { UsersTable } from "../../components/users-table";
 import { ContractsTable } from "../../components/contracts-table";
 
 export default function App() {
@@ -25,7 +25,7 @@ export default function App() {
       case "contracts":
         return <ContractsTable />;
       case "users":
-        return <PlayersTable />;
+        return <UsersTable />;
       // default:
       //   return <ContractsTable />;
     }
