@@ -5,7 +5,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'athlete' | 'lawyer' | 'coach';
+  role: 'athlete' | 'lawyer' | 'coach' | 'admin';
 }
 
 const UserSchema = new Schema<IUser>({
@@ -15,7 +15,7 @@ const UserSchema = new Schema<IUser>({
   role: { 
     type: String, 
     required: true,
-    enum: ['athlete', 'lawyer', 'coach']
+    enum: ['athlete', 'lawyer', 'coach', 'admin']
   }
 }, {
   timestamps: true //makes created at and updatedAt fields automatically

@@ -3,13 +3,10 @@ import * as userService from '../services/userService.js';
 
 export const getAllUsersHandler = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // TODO(human): Add session/authz checks before returning all users.
     const users = await userService.getAllUsers();
-    // TODO(human): Shape payload/metadata (e.g., count, pagination) to your API contract.
     return res.status(200).json({ users });
   } catch (error: unknown) {
     console.error('Failed to fetch users:', error);
-    // TODO(human): Map expected service errors to specific HTTP status codes/messages.
     return res.status(500).json({ message: 'Internal server error' });
   }
   
