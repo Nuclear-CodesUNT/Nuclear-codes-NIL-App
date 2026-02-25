@@ -1,31 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminSidebar } from "../../components/admin-sidebar"; 
 import { AdminHeader } from "../../components/admin-header";
-import { DashboardOverview } from "../../components/dashboard-overview";
-import { PlayersTable } from "../../components/players-table";
-import { CoachesTable } from "../../components/coaches-table";
-import { ContentManager } from "../../components/content-manager";
+import { UsersTable } from "../../components/users-table";
 import { ContractsTable } from "../../components/contracts-table";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export default function App() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState("contracts");
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user || (user.role !== 'admin' && user.role !== 'lawyer')) {
+        router.push("/dashboard");
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user || (user.role !== 'admin' && user.role !== 'lawyer')) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-[#2dd4bf]" size={48} />
+      </div>
+    );
+  }
 
   const getSectionTitle = () => {
     switch (activeSection) {
       case "contracts":
         return "Contract Management";
-      case "dashboard":
-        return "Dashboard";
-      case "players":
-        return "Player Management";
-      case "coaches":
-        return "Coach Management";
-      case "content":
-        return "Financial Literacy Content";
+      case "users":
+        return "Users";
       default:
-        return "Dashboard";
+        return "Admin panel";
     }
   };
 
@@ -33,16 +45,10 @@ export default function App() {
     switch (activeSection) {
       case "contracts":
         return <ContractsTable />;
-      case "dashboard":
-        return <DashboardOverview />;
-      case "players":
-        return <PlayersTable />;
-      case "coaches":
-        return <CoachesTable />;
-      case "content":
-        return <ContentManager />;
-      default:
-        return <DashboardOverview />;
+      case "users":
+        return <UsersTable />;
+      // default:
+      //   return <ContractsTable />;
     }
   };
 

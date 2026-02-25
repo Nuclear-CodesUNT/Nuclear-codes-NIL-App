@@ -48,9 +48,11 @@ export default function NavBar() {
               <Link href="/profile" className={navLinkClass("/profile")}>
                 <span>Profile</span>
               </Link>
-              <Link href="/admin-portal" className={navLinkClass("/admin-portal")}>
-                <span>Admin Portal</span>
-              </Link>
+              {(user.role === 'admin' || user.role === 'lawyer') && (
+                <Link href="/admin-portal" className={navLinkClass("/admin-portal")}>
+                  <span>Admin Portal</span>
+                </Link>
+              )}
               <Link href="/dashboard" className={navLinkClass("/dashboard")}>
                 <span>Dashboard</span>
               </Link>
