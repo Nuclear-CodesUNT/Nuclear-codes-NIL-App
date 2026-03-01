@@ -17,7 +17,7 @@ function buildPublicUrl(bucket: string, region: string, key: string) {
 
 export async function presignUpload(req: Request, res: Response) {
   try {
-    const bucket = process.env.AWS_S3_BUCKET!;
+    const bucket = process.env.S3_BUCKET_NAME!;
     const region = process.env.AWS_REGION!;
 
     const { fileName, contentType, kind } = req.body as {

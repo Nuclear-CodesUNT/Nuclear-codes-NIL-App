@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 type Video = {
   _id: string;
@@ -11,6 +11,71 @@ type Video = {
   durationSeconds?: number;
   status?: string;
 };
+
+function parseSignedUrlExpiryMs(url: string): number | null {
+  try {
+    const parsed = new URL(url);
+    const signedAt = parsed.searchParams.get("X-Amz-Date");
+    const expiresSeconds = parsed.searchParams.get("X-Amz-Expires");
+
+    if (!signedAt || !expiresSeconds) return null;
+    if (!/^\d{8}T\d{6}Z$/.test(signedAt)) return null;
+
+    const year = Number(signedAt.slice(0, 4));
+    const month = Number(signedAt.slice(4, 6)) - 1;
+    const day = Number(signedAt.slice(6, 8));
+    const hour = Number(signedAt.slice(9, 11));
+    const minute = Number(signedAt.slice(11, 13));
+    const second = Number(signedAt.slice(13, 15));
+
+    const issuedMs = Date.UTC(year, month, day, hour, minute, second);
+    const ttlMs = Number(expiresSeconds) * 1000;
+    if (!Number.isFinite(issuedMs) || !Number.isFinite(ttlMs)) return null;
+
+    return issuedMs + ttlMs;
+  } catch {
+    return null;
+  }
+}
+
+function mergeVideosKeepingActiveUrls(previous: Video[], incoming: Video[]): Video[] {
+  const previousById = new Map(previous.map((video) => [video._id, video]));
+  const now = Date.now();
+
+  return incoming.map((nextVideo) => {
+    const prevVideo = previousById.get(nextVideo._id);
+    if (!prevVideo?.videoUrl) return nextVideo;
+
+    const expiryMs = parseSignedUrlExpiryMs(prevVideo.videoUrl);
+    const stillValid = expiryMs === null || expiryMs - now > 60_000;
+
+    if (!stillValid) return nextVideo;
+    return { ...nextVideo, videoUrl: prevVideo.videoUrl };
+  });
+}
+
+function videosEqual(left: Video[], right: Video[]) {
+  if (left.length !== right.length) return false;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftVideo = left[index];
+    const rightVideo = right[index];
+
+    if (
+      leftVideo._id !== rightVideo._id ||
+      leftVideo.title !== rightVideo.title ||
+      leftVideo.description !== rightVideo.description ||
+      leftVideo.videoUrl !== rightVideo.videoUrl ||
+      leftVideo.thumbnailUrl !== rightVideo.thumbnailUrl ||
+      leftVideo.durationSeconds !== rightVideo.durationSeconds ||
+      leftVideo.status !== rightVideo.status
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 function formatDuration(seconds?: number) {
   if (!seconds) return "";
@@ -23,30 +88,51 @@ export default function VideoPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAnyVideoPlaying, setIsAnyVideoPlaying] = useState(false);
+  const playingVideoIdsRef = useRef<Set<string>>(new Set());
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-  async function fetchVideos() {
+  const fetchVideos = useCallback(async () => {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/api/videos`, { credentials: "include" });
       if (!res.ok) throw new Error(`Failed to fetch videos (${res.status})`);
       const data = await res.json();
-      setVideos(data.videos || []);
-    } catch (err: any) {
+      const incoming = (data.videos || []) as Video[];
+      setVideos((previous) => {
+        const merged = mergeVideosKeepingActiveUrls(previous, incoming);
+        return videosEqual(previous, merged) ? previous : merged;
+      });
+    } catch (err: unknown) {
       // network errors (e.g. backend not running) surface as TypeError in browsers
       console.error("Error fetching videos:", err);
-      setError(err?.message ?? "Unknown error while fetching videos");
+      const message = err instanceof Error ? err.message : "Unknown error while fetching videos";
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [API_BASE]);
+
+  const markVideoPlaying = useCallback((videoId: string) => {
+    playingVideoIdsRef.current.add(videoId);
+    setIsAnyVideoPlaying(true);
+  }, []);
+
+  const markVideoNotPlaying = useCallback((videoId: string) => {
+    playingVideoIdsRef.current.delete(videoId);
+    setIsAnyVideoPlaying(playingVideoIdsRef.current.size > 0);
+  }, []);
 
   useEffect(() => {
     fetchVideos();
+  }, [fetchVideos]);
+
+  useEffect(() => {
+    if (isAnyVideoPlaying) return;
     const id = setInterval(fetchVideos, 8000);
     return () => clearInterval(id);
-  }, []);
+  }, [fetchVideos, isAnyVideoPlaying]);
 
   if (loading) return <p style={{ padding: 20 }}>Loading videos…</p>;
 
@@ -126,7 +212,14 @@ export default function VideoPage() {
                 </div>
 
                 <div style={{ marginTop: 12 }}>
-                  <video src={v.videoUrl} controls style={{ width: "100%", maxHeight: 360, borderRadius: 8 }} />
+                  <video
+                    src={v.videoUrl}
+                    controls
+                    onPlay={() => markVideoPlaying(v._id)}
+                    onPause={() => markVideoNotPlaying(v._id)}
+                    onEnded={() => markVideoNotPlaying(v._id)}
+                    style={{ width: "100%", maxHeight: 360, borderRadius: 8 }}
+                  />
                 </div>
               </div>
             </article>
