@@ -1,8 +1,13 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import Athlete from '../models/Athlete.js';
 import Lawyer from '../models/Lawyer.js';
 import Coach from '../models/Coach.js';
+import { sendPasswordResetEmail } from './sesService.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 interface RoleSpecificData {
   // Athlete
@@ -26,14 +31,58 @@ interface UserData {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role?: string;
   [key: string]: any; // for role specific data spread
 }
+
+const createRoleProfile = async (userId: any, role: string, roleSpecificData: RoleSpecificData) => {
+  switch (role) {
+    case 'athlete': {
+      const { school, currentYear, sport, position } = roleSpecificData;
+      if (!school || !currentYear || !sport || !position) {
+        throw new Error('MISSING_ATHLETE_FIELDS');
+      }
+      const profile = new Athlete({ userId, school, currentYear, sport, position });
+      await profile.save();
+      return profile;
+    }
+
+    case 'lawyer': {
+      const { barNumber, state, firmName, specializations, yearsOfExperience } = roleSpecificData;
+      if (!barNumber || !state || yearsOfExperience === undefined) {
+        throw new Error('MISSING_LAWYER_FIELDS');
+      }
+      const profile = new Lawyer({
+        userId,
+        barNumber,
+        state,
+        firmName,
+        specializations: specializations || [],
+        yearsOfExperience
+      });
+      await profile.save();
+      return profile;
+    }
+
+    case 'coach': {
+      const { school: coachSchool, sport: coachSport } = roleSpecificData;
+      if (!coachSchool || !coachSport) {
+        throw new Error('MISSING_COACH_FIELDS');
+      }
+      const profile = new Coach({ userId, school: coachSchool, sport: coachSport });
+      await profile.save();
+      return profile;
+    }
+
+    default:
+      throw new Error('INVALID_ROLE');
+  }
+};
 
 export const registerUser = async (userData: UserData) => {
   const { name, email, password, role, ...roleSpecificData } = userData;
 
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password) {
     throw new Error('MISSING_FIELDS');
   }
 
@@ -50,70 +99,22 @@ export const registerUser = async (userData: UserData) => {
     name,
     email,
     password: hashedPassword,
-    role
+    ...(role ? { role } : {})
   });
   await newUser.save();
 
-  // create role-specific profile
-  let roleProfile;
-  try {
-    switch (role) {
-      case 'athlete':
-        const { school, currentYear, sport, position } = roleSpecificData as RoleSpecificData;
-        if (!school || !currentYear || !sport || !position) {
-          throw new Error('MISSING_ATHLETE_FIELDS');
-        }
-        roleProfile = new Athlete({
-          userId: newUser._id,
-          school,
-          currentYear,
-          sport,
-          position
-        });
-        break;
-
-      case 'lawyer':
-        const { barNumber, state, firmName, specializations, yearsOfExperience } = roleSpecificData as RoleSpecificData;
-        if (!barNumber || !state || yearsOfExperience === undefined) {
-           throw new Error('MISSING_LAWYER_FIELDS');
-        }
-        roleProfile = new Lawyer({
-          userId: newUser._id,
-          barNumber,
-          state,
-          firmName,
-          specializations: specializations || [],
-          yearsOfExperience
-        });
-        break;
-
-      case 'coach':
-        const { school: coachSchool, sport: coachSport } = roleSpecificData as RoleSpecificData;
-        if (!coachSchool || !coachSport) {
-           throw new Error('MISSING_COACH_FIELDS');
-        }
-        roleProfile = new Coach({
-          userId: newUser._id,
-          school: coachSchool,
-          sport: coachSport
-        });
-        break;
-
-      default:
-        throw new Error('INVALID_ROLE');
+  // If role provided, create role-specific profile
+  if (role) {
+    try {
+      await createRoleProfile(newUser._id, role, roleSpecificData as RoleSpecificData);
+    } catch (error) {
+      // If profile creation fails, cleanup the user
+      await User.findByIdAndDelete(newUser._id);
+      throw error;
     }
-
-    if (roleProfile) {
-      await roleProfile.save();
-    }
-
-    return newUser;
-
-  } catch (error) {
-    // If profile creation fails, cleanup the user
-    await User.findByIdAndDelete(newUser._id);
-    throw error;
   }
+
+  return newUser;
 };
 
 export const authenticateUser = async (email: string, password?: string) => {
@@ -124,6 +125,10 @@ export const authenticateUser = async (email: string, password?: string) => {
     const user = await User.findOne({ email });
     if (!user) {
         throw new Error('INVALID_CREDENTIALS');
+    }
+    //google only user
+    if (!user.password){
+        throw new Error('USE_GOOGLE_LOGIN')
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -141,3 +146,133 @@ export const getUserById = async (userId: string) => {
     }
     return user;
 }
+
+export const googleLogin = async (googleToken: string) => {
+  if (!googleToken) {
+    throw new Error('MISSING_TOKEN');
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: googleToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw new Error('INVALID_GOOGLE_TOKEN');
+  }
+
+  if (!payload || !payload.email) {
+    throw new Error('INVALID_GOOGLE_TOKEN');
+  }
+
+  const { sub: googleId, email, name } = payload;
+
+  // Look up by googleId first, then by email
+  let user = await User.findOne({ googleId });
+  if (user) {
+    return { user, isNewUser: false };
+  }
+
+  user = await User.findOne({ email });
+  if (user) {
+    // Link Google account to existing user
+    user.googleId = googleId;
+    await user.save();
+    return { user, isNewUser: !user.role };
+  }
+
+  // Create new user (no role, no password)
+  const newUser = new User({
+    name: name || email,
+    email,
+    googleId,
+  });
+  await newUser.save();
+
+  return { user: newUser, isNewUser: true };
+};
+
+export const completeUserProfile = async (userId: string, profileData: { role: string; [key: string]: any }) => {
+    const { role, ...roleSpecificData } = profileData;
+
+    if (!role) {
+        throw new Error('MISSING_ROLE');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error('USER_NOT_FOUND');
+    }
+
+    if (user.role) {
+        throw new Error('PROFILE_ALREADY_COMPLETE');
+    }
+
+    await createRoleProfile(user._id, role, roleSpecificData as RoleSpecificData);
+
+    user.role = role as any;
+    await user.save();
+
+    return user;
+}
+
+export const requestPasswordReset = async (email: string) => {
+  if (!email) {
+    throw new Error('MISSING_EMAIL');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    // Return silently — no enumeration
+    return;
+  }
+
+  // Google-only accounts have no password to reset
+  if (!user.password && user.googleId) {
+    throw new Error('GOOGLE_ONLY_ACCOUNT');
+  }
+
+  // Generate a random 32-byte token
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+  user.resetToken = hashedToken;
+  user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+  await user.save();
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch {
+    throw new Error('EMAIL_SEND_FAILED');
+  }
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  if (!token || !newPassword) {
+    throw new Error('MISSING_FIELDS');
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error('PASSWORD_TOO_SHORT');
+  }
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    resetToken: hashedToken,
+    resetTokenExpiry: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new Error('INVALID_OR_EXPIRED_TOKEN');
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpiry = undefined;
+  await user.save();
+};
