@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import Athlete from '../models/Athlete.js';
 import Lawyer from '../models/Lawyer.js';
 import Coach from '../models/Coach.js';
+import { sendPasswordResetEmail } from './sesService.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -215,3 +217,62 @@ export const completeUserProfile = async (userId: string, profileData: { role: s
 
     return user;
 }
+
+export const requestPasswordReset = async (email: string) => {
+  if (!email) {
+    throw new Error('MISSING_EMAIL');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    // Return silently — no enumeration
+    return;
+  }
+
+  // Google-only accounts have no password to reset
+  if (!user.password && user.googleId) {
+    throw new Error('GOOGLE_ONLY_ACCOUNT');
+  }
+
+  // Generate a random 32-byte token
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+  user.resetToken = hashedToken;
+  user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+  await user.save();
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch {
+    throw new Error('EMAIL_SEND_FAILED');
+  }
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  if (!token || !newPassword) {
+    throw new Error('MISSING_FIELDS');
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error('PASSWORD_TOO_SHORT');
+  }
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    resetToken: hashedToken,
+    resetTokenExpiry: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new Error('INVALID_OR_EXPIRED_TOKEN');
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpiry = undefined;
+  await user.save();
+};

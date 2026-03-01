@@ -7,6 +7,8 @@ export interface IUser extends Document {
   password?: string;
   googleId?: string;
   role: 'athlete' | 'lawyer' | 'coach' | 'admin';
+  resetToken?: string;
+  resetTokenExpiry?: Date;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -14,11 +16,13 @@ const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: false },
   googleId: { type: String, unique: true, sparse: true},
-  role: { 
-    type: String, 
+  role: {
+    type: String,
     required: false,
     enum: ['athlete', 'lawyer', 'coach', 'admin']
-  }
+  },
+  resetToken: { type: String, required: false },
+  resetTokenExpiry: { type: Date, required: false }
 }, {
   timestamps: true //makes created at and updatedAt fields automatically
 });

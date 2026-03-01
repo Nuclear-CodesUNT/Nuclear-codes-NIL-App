@@ -40,12 +40,12 @@ export function UsersTable() {
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg text-[#1e2a47]">All Users</h2>
+        <h2 className="text-lg text-brand-dark">All Users</h2>
       </div>
       
       {loading ? (
         <div className="p-12 flex justify-center items-center">
-          <Loader2 className="animate-spin text-[#2dd4bf]" size={32} />
+          <Loader2 className="animate-spin text-brand-teal" size={32} />
         </div>
       ) : error ? (
         <div className="p-12 text-center text-red-500">{error}</div>
@@ -73,7 +73,7 @@ export function UsersTable() {
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="capitalize bg-[#2dd4bf]/10 text-[#1e2a47] border-[#2dd4bf]">
+                    <Badge variant="secondary" className="capitalize bg-brand-teal/10 text-brand-dark border-brand-teal">
                       {user.role}
                     </Badge>
                   </TableCell>

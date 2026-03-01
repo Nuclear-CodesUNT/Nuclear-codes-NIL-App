@@ -25,7 +25,7 @@ export default function App() {
   if (loading || !user || (user.role !== 'admin' && user.role !== 'lawyer')) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-[#2dd4bf]" size={48} />
+        <Loader2 className="animate-spin text-brand-teal" size={48} />
       </div>
     );
   }
