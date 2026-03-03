@@ -1,4 +1,4 @@
-import { Users, BookOpen, FileText, LayoutDashboard } from "lucide-react";
+import { Users, BookOpen, FileText, LayoutDashboard, QrCode } from "lucide-react";
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -9,6 +9,7 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
   const menuItems = [
     { id: 'contracts', label: 'Contracts', icon: FileText },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'invite-codes', label: 'Invite Codes', icon: QrCode },
   ];
 
   return (
