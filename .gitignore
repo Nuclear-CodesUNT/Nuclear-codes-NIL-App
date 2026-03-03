@@ -9,3 +9,4 @@ backend/build
 .env*
 .env.local
 GEMINI.md
+node_modules

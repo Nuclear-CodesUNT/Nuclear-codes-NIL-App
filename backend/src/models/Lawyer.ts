@@ -7,6 +7,8 @@ export interface ILawyer extends Document {
   firmName?: string;
   specializations: string[];
   yearsOfExperience: number;
+  profilepicture? : string;
+  bio?: string;
 }
 
 const LawyerSchema = new Schema<ILawyer>({
@@ -15,7 +17,9 @@ const LawyerSchema = new Schema<ILawyer>({
   state: { type: String, required: true },
   firmName: { type: String },
   specializations: [{ type: String }],
-  yearsOfExperience: { type: Number, required: true, min: 0 }
+  profilepicture: { type: String, default: ""},
+  yearsOfExperience: { type: Number, required: true, min: 0 },
+  bio: { type: String, default: "" }
 }, {
   timestamps: true
 });
