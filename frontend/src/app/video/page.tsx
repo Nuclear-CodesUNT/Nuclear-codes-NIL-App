@@ -12,6 +12,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fetchCompletedVideos, setVideoCompleted } from "@/lib/api";
 import Image from "next/image";
 import {
   GraduationCap,
@@ -274,17 +275,7 @@ export default function Page() {
   const [isAnyVideoPlaying, setIsAnyVideoPlaying] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
-  const [completedVideoIds, setCompletedVideoIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = window.localStorage.getItem("completedVideoIds");
-        return stored ? JSON.parse(stored) : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  const [completedVideoIds, setCompletedVideoIds] = useState<string[]>([]);
 
   const playingVideoIdsRef = useRef<Set<string>>(new Set());
 
@@ -323,28 +314,23 @@ export default function Page() {
   }, []);
 
   const markVideoCompleted = useCallback(
-    (videoId: string) => {
-      setCompletedVideoIds((ids) => {
-        if (ids.includes(videoId)) return ids;
-        const updated = [...ids, videoId];
-        try {
-          window.localStorage.setItem("completedVideoIds", JSON.stringify(updated));
-        } catch { }
-        return updated;
-      });
+    async (videoId: string) => {
+      try {
+        await setVideoCompleted(videoId);
+        setCompletedVideoIds((ids) => (ids.includes(videoId) ? ids : [...ids, videoId]));
+      } catch (err) {
+        // Optionally show error to user
+      }
       markVideoNotPlaying(videoId);
     },
     [markVideoNotPlaying]
   );
 
-  // Sync localStorage to state on mount
+  // Fetch completed videos from backend on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = window.localStorage.getItem("completedVideoIds");
-        if (stored) setCompletedVideoIds(JSON.parse(stored));
-      } catch { }
-    }
+    fetchCompletedVideos()
+      .then((ids) => setCompletedVideoIds(ids))
+      .catch(() => setCompletedVideoIds([]));
   }, []);
 
   useEffect(() => {

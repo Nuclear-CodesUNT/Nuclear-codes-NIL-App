@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { DayPicker } from "react-day-picker";
-import { Trophy, MapPin, CalendarDays, Upload, Trash2, Plus, Minus } from "lucide-react";
+import { Trophy, MapPin, CalendarDays, Upload, Trash2, Plus, Image } from "lucide-react";
 import "react-day-picker/style.css";
 import Link from "next/link";
 
@@ -131,7 +131,7 @@ export default function EditAthleteProfile({
 
           {/* Profile Frame */}
           <div className="relative flex flex-col z-0 sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-6 gap-6">
-            
+
             {/* New Section Title */}
             <h2 className="absolute -top-4 left-4 bg-white px-2 text-lg font-semibold">Basic Information</h2>
 
@@ -249,9 +249,9 @@ export default function EditAthleteProfile({
                   />
                   <button
                     onClick={() => handleRemoveStat(index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-5 h-5" />
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               ))}
@@ -266,7 +266,7 @@ export default function EditAthleteProfile({
             <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 flex flex-col justify-center items-center gap-3 text-center">
               <Upload className="w-10 h-10 text-gray-500" />
               <p className="text-gray-600 font-medium">Drag and drop your video files here, or</p>
-              
+
               <label className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-md cursor-pointer hover:bg-gray-800">
                 <Plus className="w-5 h-5" /> Choose files
                 <input type="file" accept="video/mp4,video/mov,video/avi" onChange={handleHighlightUpload} className="hidden" />
@@ -278,33 +278,33 @@ export default function EditAthleteProfile({
             {/* Uploaded Highlights Grid */}
             <h3 className="text-lg font-medium mt-6 mb-2">Uploaded Highlights</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {highlights.map((highlight) => (
-              <div
-                key={highlight.id}
-                className="relative border rounded-lg overflow-hidden flex flex-col"
-              >
-                <img src={highlight.image} className="w-full h-40 object-cover" />
+              {highlights.map((highlight) => (
+                <div
+                  key={highlight.id}
+                  className="relative border rounded-lg overflow-hidden flex flex-col"
+                >
+                  <img src={highlight.image} className="w-full h-40 object-cover" />
 
-                <div className="p-3 flex flex-col">
-                  {/* Title with Gray Background */}
-                  <div className="bg-gray-200 rounded-md px-2 py-1 text-sm font-medium text-gray-800 truncate">
-                    {highlight.title}
-                  </div>
+                  <div className="p-3 flex flex-col">
+                    {/* Title with Gray Background */}
+                    <div className="bg-gray-200 rounded-md px-2 py-1 text-sm font-medium text-gray-800 truncate">
+                      {highlight.title}
+                    </div>
 
-                  {/* Upload Date + Delete Button Row */}
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-gray-500">
-                      Uploaded: {new Date(highlight.id).toLocaleDateString()}
-                    </p>
-                    <button
-                      onClick={() => handleDeleteHighlight(highlight.id)}
+                    {/* Upload Date + Delete Button Row */}
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-gray-500">
+                        Uploaded: {new Date(highlight.id).toLocaleDateString()}
+                      </p>
+                      <button
+                        onClick={() => handleDeleteHighlight(highlight.id)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="w-5 h-5" />
-                    </button>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
               ))}
             </div>
           </div>
@@ -449,10 +449,10 @@ export default function EditAthleteProfile({
                 ))}
               </ul>
             </div>
-              ) : (
-              <p className="text-sm text-gray-500 mt-3 text-center">
-                No game days selected yet. Click on the calendar to add.
-              </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-3 text-center">
+              No game days selected yet. Click on the calendar to add.
+            </p>
           )}
         </div>
       </div>
