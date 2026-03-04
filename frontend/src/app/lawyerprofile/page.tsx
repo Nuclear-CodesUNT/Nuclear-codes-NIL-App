@@ -73,13 +73,16 @@ export default function LawyerProfile() {
   return (
     <>
       {/* Main container */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full">
+      <div
+      className="min-h-screen bg-contain bg-center bg-no-repeat grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full"
+      style={{ backgroundImage: "url('/images/NILLAWEdited.png')" }}
+    >
 
         {/* Left Column Profile */}
         <div className="flex flex-col gap-6 pr-4">
 
           {/* Profile Frame */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-10 gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white/70 border border-gray-300 rounded-lg p-8 pb-10 gap-6">
             
             {/* Profile picture */}
             <div className="flex-shrink-0">
@@ -90,7 +93,7 @@ export default function LawyerProfile() {
             </div>
 
             {/* Lawyer Info Card */}
-            <div className="relative flex flex-col gap-4 w-full p-6 bg-white border border-gray-200 rounded-lg">
+            <div className="relative flex flex-col gap-4 w-full p-6 bg-white/0 border border-gray-200 rounded-lg">
 
               {/* Edit Profile button (top-right corner of info card) */}
               {loggedInUserId === profile?.userId && (
