@@ -8,7 +8,7 @@ const getAllInviteCodes = async () => {
 
 // Generate a new invite code with optional assignedTo and usesLeft
 const generateInviteCode = async (assignedTo: string = "", usesLeft: number = 1) => {
-  const code = nanoid(8).toUpperCase(); // random 8-character code
+  const code = nanoid(16).toUpperCase(); // random 8-character code
   const newCode = new InviteCode({ code, assignedTo, usesLeft });
   await newCode.save();
   return newCode;
