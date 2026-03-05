@@ -1,15 +1,27 @@
 import InviteCode from '../models/InviteCode.js';
-import { nanoid } from 'nanoid'; // for generating unique codes
+import { nanoid } from 'nanoid';
 
 // Fetch all invite codes
 const getAllInviteCodes = async () => {
   return await InviteCode.find().sort({ createdAt: -1 });
 };
 
-// Generate a new invite code with optional assignedTo and usesLeft
-const generateInviteCode = async (assignedTo: string = "", usesLeft: number = 1) => {
-  const code = nanoid(16).toUpperCase(); // random 8-character code
-  const newCode = new InviteCode({ code, assignedTo, usesLeft });
+// Generate a new invite code with assignedTo, role, and usesLeft
+const generateInviteCode = async (
+  assignedTo: string = "",
+  role: string = "Athlete",
+  usesLeft: number = 1
+) => {
+
+  const code = nanoid(16).toUpperCase();
+
+  const newCode = new InviteCode({
+    code,
+    assignedTo,
+    role,
+    usesLeft
+  });
+
   await newCode.save();
   return newCode;
 };

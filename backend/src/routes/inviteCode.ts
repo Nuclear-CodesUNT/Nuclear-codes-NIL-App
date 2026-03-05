@@ -18,8 +18,10 @@ router.get('/', async (req, res) => {
 // POST /api/invite-codes/generate
 router.post('/generate', async (req, res) => {
   try {
-    const { assignedTo = "", usesLeft = 1 } = req.body || {};
-    const code = await generateInviteCode(assignedTo, usesLeft);
+    const { assignedTo = "", role = "Athlete", usesLeft = 1 } = req.body || {};
+
+    const code = await generateInviteCode(assignedTo, role, usesLeft);
+
     res.json({ code });
   } catch (err) {
     console.error(err);
@@ -49,15 +51,17 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Update /api/invite-codes/:id
+// PATCH /api/invite-codes/:id
 router.patch('/:id', async (req, res) => {
   try {
-    const { assignedTo, usesLeft } = req.body;
+    const { assignedTo, usesLeft, role } = req.body;
+
     const updated = await InviteCode.findByIdAndUpdate(
       req.params.id,
-      { assignedTo, usesLeft },
+      { assignedTo, usesLeft, role },
       { new: true }
     );
+
     res.json({ code: updated });
   } catch (err) {
     console.error(err);

@@ -11,6 +11,7 @@ interface InviteCode {
   _id: string;
   code: string;
   assignedTo: string;
+  role: string;
   usesLeft: number;
   createdAt: string;
 }
@@ -22,6 +23,7 @@ export function InviteCodesTable() {
 
   // Inputs for generating a new code
   const [newAssignedTo, setNewAssignedTo] = useState("");
+  const [newRole, setNewRole] = useState("athlete");
   const [newUsesLeft, setNewUsesLeft] = useState(1);
 
   useEffect(() => {
@@ -82,6 +84,17 @@ export function InviteCodesTable() {
             className="border border-gray-300 rounded px-2 py-1"
           />
 
+          {/* Role selector */}
+          <select
+            value={newRole}
+            onChange={(e) => setNewRole(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1"
+          >
+            <option value="athlete">Athlete</option>
+            <option value="coach">Coach</option>
+            <option value="lawyer">Lawyer</option>
+          </select>
+
           {/* Uses Left input */}
           <input
             type="number"
@@ -91,17 +104,21 @@ export function InviteCodesTable() {
             className="border border-gray-300 rounded px-2 py-1 w-20 text-center"
           />
 
-          {/* Generate New Code button */}
+          {/* Generate New Code */}
           <Button
             onClick={async () => {
               try {
                 const response = await api.post("/invite-codes/generate", {
                   assignedTo: newAssignedTo,
+                  role: newRole.toLowerCase(),
                   usesLeft: newUsesLeft,
                 });
+
                 setCodes(prev => [response.data.code, ...prev]);
+
                 setNewAssignedTo("");
                 setNewUsesLeft(1);
+                setNewRole("Athlete");
               } catch (err) {
                 console.error("Failed to generate code", err);
               }
@@ -111,7 +128,7 @@ export function InviteCodesTable() {
             Generate New Code
           </Button>
 
-          {/* Clear All Codes button */}
+          {/* Clear All Codes */}
           <Button
             onClick={async () => {
               if (!confirm("Are you sure you want to delete all invite codes?")) return;
@@ -142,15 +159,17 @@ export function InviteCodesTable() {
             <TableRow>
               <TableHead>Code</TableHead>
               <TableHead>Assigned To</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>Uses Left</TableHead>
               <TableHead>Created At</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {codes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   No invite codes found.
                 </TableCell>
               </TableRow>
@@ -159,7 +178,7 @@ export function InviteCodesTable() {
                 <TableRow key={code._id}>
                   <TableCell className="font-mono">{code.code}</TableCell>
 
-                  {/* Editable assignedTo */}
+                  {/* Assigned To */}
                   <TableCell>
                     <input
                       type="text"
@@ -169,7 +188,22 @@ export function InviteCodesTable() {
                     />
                   </TableCell>
 
-                  {/* Editable usesLeft */}
+                  {/* Role */}
+                  <TableCell>
+                    <Badge
+                      className={
+                        code.role === "athlete"
+                          ? "bg-blue-100 text-blue-700"
+                          : code.role === "coach"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-purple-100 text-purple-700"
+                      }
+                    >
+                      {code.role.charAt(0).toUpperCase() + code.role.slice(1)}
+                    </Badge>
+                  </TableCell>
+
+                  {/* Uses Left */}
                   <TableCell>
                     <input
                       type="number"
@@ -185,11 +219,14 @@ export function InviteCodesTable() {
                   </TableCell>
 
                   <TableCell>{new Date(code.createdAt).toLocaleDateString()}</TableCell>
+
+                  {/* Actions */}
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" onClick={() => handleCopy(code.code)}>
                         <Copy size={16} />
                       </Button>
+
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(code._id)}>
                         <Trash2 size={16} />
                       </Button>

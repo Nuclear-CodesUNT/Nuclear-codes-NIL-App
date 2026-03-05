@@ -19,7 +19,8 @@ const UserSchema = new Schema<IUser>({
   role: {
     type: String,
     required: false,
-    enum: ['athlete', 'lawyer', 'coach', 'admin']
+    enum: ['athlete', 'lawyer', 'coach', 'admin'],
+    lowercase: true,
   },
   resetToken: { type: String, required: false },
   resetTokenExpiry: { type: Date, required: false }
