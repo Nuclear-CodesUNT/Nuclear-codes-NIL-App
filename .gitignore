@@ -3,7 +3,8 @@ frontend/node_modules
 .ts* 
 frontend/build
 frontend/.next
-
+cookies.txt
+login.json
 backend/build 
 
 .env*
