@@ -8,7 +8,7 @@ export async function addBookmark(req: Request, res: Response) {
     const userId = req.session.userId!;
     const { id: videoId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    if (typeof videoId !== "string" || !mongoose.Types.ObjectId.isValid(videoId)) {
       return res.status(400).json({ message: "Invalid video id." });
     }
 
@@ -34,7 +34,7 @@ export async function removeBookmark(req: Request, res: Response) {
     const userId = req.session.userId!;
     const { id: videoId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    if (typeof videoId !== "string" || !mongoose.Types.ObjectId.isValid(videoId)) {
       return res.status(400).json({ message: "Invalid video id." });
     }
 
@@ -72,7 +72,7 @@ export async function isBookmarked(req: Request, res: Response) {
     const userId = req.session.userId!;
     const { id: videoId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    if (typeof videoId !== "string" || !mongoose.Types.ObjectId.isValid(videoId)) {
       return res.status(400).json({ message: "Invalid video id." });
     }
 
