@@ -39,6 +39,9 @@ const createRoleProfile = async (userId: any, role: string, roleSpecificData: Ro
   switch (role) {
     case 'athlete': {
       const { school, currentYear, sport, position } = roleSpecificData;
+      if (!school || !currentYear || !sport || !position) {
+        throw new Error('MISSING_ATHLETE_FIELDS');
+      }
       const profile = new Athlete({ userId, school, currentYear, sport, position });
       await profile.save();
       return profile;
@@ -102,7 +105,7 @@ export const registerUser = async (userData: UserData) => {
     const allFieldsPresent = (() => {
       switch (role.toLowerCase()) {
         case 'athlete':
-          return true;
+          return roleSpecificData.school && roleSpecificData.currentYear && roleSpecificData.sport && roleSpecificData.position;
         case 'coach':
           return roleSpecificData.school && roleSpecificData.sport;
         case 'lawyer':

@@ -21,8 +21,8 @@ export interface IAthlete extends Document {
 
 const AthleteSchema = new Schema<IAthlete>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  school: { type: String, default: "" },
-  currentYear: { type: String, default: "" },
+  school: { type: String, required: true },
+  currentYear: { type: String, required: true },
   sport: { type: String, required: false },
   position: { type: String, required: false},
   teamName: { type: String, default: ""},
