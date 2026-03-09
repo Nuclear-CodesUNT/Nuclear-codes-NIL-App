@@ -1,10 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import { Trophy, MapPin, CalendarDays, Upload, Trash2, Plus, Image } from "lucide-react";
 import "react-day-picker/style.css";
 import Link from "next/link";
+
+interface GameDay {
+  _id?: string; // exists if coming from DB
+  date: string; // ISO string (important)
+  homeAway: "Home" | "Away";
+  opponent: string;
+}
+
+interface Highlight {
+  id: number;
+  title: string;
+  image: string;
+}
 
 interface AthleteInformation {
   playerName: string;
@@ -14,12 +29,7 @@ interface AthleteInformation {
   location?: string;
   bio?: string;
   profilepicture?: string;
-}
-
-interface Highlight {
-  id: number;
-  title: string;
-  image: string;
+  gameDays?: GameDay[];
 }
 
 export default function EditAthleteProfile({
@@ -40,10 +50,11 @@ export default function EditAthleteProfile({
   const [location, setLocation] = useState(initialLocation);
   const [bio, setBio] = useState(initialBio);
   const [profilepicture, setProfilePicture] = useState(initialProfilePicture);
-  const [gameDays, setGameDays] = useState<{ date: Date; homeAway: "Home" | "Away"; opponent: string }[]>([]);
 
-
-
+  const [gameDays, setGameDays] = useState<GameDay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   // Highlights
   const [highlights, setHighlights] = useState<Highlight[]>([
@@ -59,20 +70,64 @@ export default function EditAthleteProfile({
   ]);
 
   // Save handler
-  const handleSave = () => {
-    console.log("Saving profile:", {
-      playerName,
-      sport,
-      position,
-      teamName,
-      location,
-      bio,
-      profilepicture,
-      highlights,
-      stats,
+  const handleSave = async () => {
+  try {
+    // Convert stats array → object for MongoDB Map
+    const statsObject: Record<string, string> = {};
+    stats.forEach(s => {
+      if (s.name.trim() !== "") {
+        statsObject[s.name] = s.value;
+      }
     });
-    alert("Profile saved successfully!");
-  };
+
+    // Prep game days to save to mongo
+    const cleanedGameDays = gameDays
+      .filter(g => g.opponent.trim() !== "")
+      .map(g => ({
+        _id: g._id, // keep existing IDs if present
+        date: new Date(g.date).toISOString(),
+        homeAway: g.homeAway,
+        opponent: g.opponent
+      }))
+      .sort(
+        (a, b) =>
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+
+    const res = await fetch("http://localhost:4000/api/profile", {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        playerName,
+        sport,
+        position,
+        teamName,
+        location,
+        bio,
+        profilepicture,
+        stats: statsObject,
+        gameDays: cleanedGameDays
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Failed to update profile");
+      return;
+    }
+
+    alert("Profile updated successfully");
+    router.push("/profile");
+
+  } catch (err) {
+    alert("Network error saving profile");
+  }
+};
 
   // Profile picture upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +176,68 @@ export default function EditAthleteProfile({
   const handleRemoveStat = (index: number) => {
     setStats(prev => prev.filter((_, i) => i !== index));
   };
+
+  useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/profile", {
+        credentials: "include"
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("Failed to load profile:", data.error);
+        return;
+      }
+
+      const p = data.profile;
+
+      setPlayerName(data.user.name || "");
+      setSport(p?.sport || "");
+      setPosition(p?.position || "");
+      setTeamName(p?.teamName || "");
+      setLocation(p?.location || "");
+      setBio(p?.bio || "");
+      setProfilePicture(p?.profilepicture || "/images/ProfilepicPlaceholder.png");
+
+      // Convert MongoDB Map → array for UI
+      if (p?.stats && typeof p.stats === "object") {
+        const statsArray = Object.entries(p.stats).map(([name, value]) => ({
+          name,
+          value: String(value)
+        }));
+
+        setStats(statsArray);
+      }
+        else {
+          setStats([]);
+        }
+
+        if (p?.gameDays && Array.isArray(p.gameDays)) {
+        const formattedGameDays = p.gameDays
+          .map((g: any) => ({
+            _id: g._id,
+            date: new Date(g.date).toISOString(), // normalize
+            homeAway: g.homeAway,
+            opponent: g.opponent
+          }))
+          .sort((a: GameDay, b: GameDay) =>
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+
+        setGameDays(formattedGameDays);
+      } else {
+        setGameDays([]);
+      }
+
+
+    } catch (err) {
+      console.error("Network error loading profile", err);
+    }
+  };
+
+  loadProfile();
+}, []);
 
   return (
     <>
@@ -339,40 +456,43 @@ export default function EditAthleteProfile({
               <DayPicker
                 mode="multiple"
                 required={false}
-                selected={gameDays.map((g) => g.date)}
+                // Convert ISO strings → Date objects for DayPicker
+                selected={gameDays.map((g) => new Date(g.date))}
                 onSelect={(dates) => {
                   if (!dates) return;
 
-                  const updated = [...gameDays];
+                  // Copy current gameDays
+                  const updated: typeof gameDays = [...gameDays];
 
+                  // Add new dates
                   dates.forEach((d) => {
-                    const exists = updated.some((g) => g.date.getTime() === d.getTime());
+                    const exists = updated.some(
+                      (g) => new Date(g.date).getTime() === d.getTime()
+                    );
                     if (!exists) {
                       updated.push({
-                        date: d,
+                        _id: undefined, // new game, no DB ID yet
+                        date: d.toISOString(),
                         homeAway: "Home",
                         opponent: "",
                       });
                     }
                   });
 
-                  // remove deselected dates
-                  updated.forEach((g, i) => {
-                    if (!dates.find((d) => d.getTime() === g.date.getTime())) {
-                      updated.splice(i, 1);
-                    }
-                  });
+                  // Remove deselected dates
+                  const filtered = updated.filter((g) =>
+                    dates.some((d) => new Date(g.date).getTime() === d.getTime())
+                  );
 
-                  setGameDays(updated);
+                  setGameDays(filtered);
                 }}
-
                 showOutsideDays
                 className="w-full max-w-[350px]"
                 styles={{
-                  months: { display: 'flex', justifyContent: 'left', width: '100%' },
-                  month: { width: '100%' },
-                  head_cell: { padding: '0.5rem' },
-                  day: { padding: '0.4rem' },
+                  months: { display: "flex", justifyContent: "left", width: "100%" },
+                  month: { width: "100%" },
+                  head_cell: { padding: "0.5rem" },
+                  day: { padding: "0.4rem" },
                 }}
               />
             </div>
@@ -385,68 +505,68 @@ export default function EditAthleteProfile({
                 <CalendarDays className="w-4 h-4 text-gray-700" /> Selected Game Days
               </h3>
               <ul className="space-y-2">
-                {gameDays.map((game, idx) => (
-                  <li
-                    key={idx}
-                    className="flex flex-col gap-2 border border-gray-200 rounded p-3 text-sm"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{game.date.toDateString()}</span>
-                      <button
-                        onClick={() =>
-                          setGameDays((prev) =>
-                            prev.filter((g) => g.date.getTime() !== game.date.getTime())
-                          )
-                        }
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                {gameDays.map((game) => {
+                  const gameDate = new Date(game.date); // convert ISO string to Date
 
-                    {/* Home/Away Selector */}
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Home or Away</label>
-                      <select
-                        value={game.homeAway}
-                        onChange={(e) => {
-                          const value = e.target.value as "Home" | "Away";
-                          setGameDays((prev) =>
-                            prev.map((g) =>
-                              g.date.getTime() === game.date.getTime()
-                                ? { ...g, homeAway: value }
-                                : g
+                  return (
+                    <li
+                      key={game._id || game.date} // use _id if exists
+                      className="flex flex-col gap-2 border border-gray-200 rounded p-3 text-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{gameDate.toDateString()}</span>
+                        <button
+                          onClick={() =>
+                            setGameDays((prev) =>
+                              prev.filter((g) => g.date !== game.date)
                             )
-                          );
-                        }}
-                        className="w-full border border-gray-300 rounded p-2 mt-1"
-                      >
-                        <option value="Home">Home</option>
-                        <option value="Away">Away</option>
-                      </select>
-                    </div>
+                          }
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                    {/* Opponent Name */}
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Opponent</label>
-                      <input
-                        type="text"
-                        value={game.opponent}
-                        onChange={(e) =>
-                          setGameDays((prev) =>
-                            prev.map((g) =>
-                              g.date.getTime() === game.date.getTime()
-                                ? { ...g, opponent: e.target.value }
-                                : g
+                      {/* Home/Away Selector */}
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">Home or Away</label>
+                        <select
+                          value={game.homeAway}
+                          onChange={(e) => {
+                            const value = e.target.value as "Home" | "Away";
+                            setGameDays((prev) =>
+                              prev.map((g) =>
+                                g.date === game.date ? { ...g, homeAway: value } : g
+                              )
+                            );
+                          }}
+                          className="w-full border border-gray-300 rounded p-2 mt-1"
+                        >
+                          <option value="Home">Home</option>
+                          <option value="Away">Away</option>
+                        </select>
+                      </div>
+
+                      {/* Opponent Name */}
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">Opponent</label>
+                        <input
+                          type="text"
+                          value={game.opponent}
+                          onChange={(e) =>
+                            setGameDays((prev) =>
+                              prev.map((g) =>
+                                g.date === game.date ? { ...g, opponent: e.target.value } : g
+                              )
                             )
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded p-2 mt-1"
-                        placeholder="Team Name"
-                      />
-                    </div>
-                  </li>
-                ))}
+                          }
+                          className="w-full border border-gray-300 rounded p-2 mt-1"
+                          placeholder="Team Name"
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : (

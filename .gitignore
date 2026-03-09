@@ -3,9 +3,12 @@ frontend/node_modules
 .ts* 
 frontend/build
 frontend/.next
+cookies.txt
 login.json
 backend/build 
 cookies.txt
 .env*
 .env.local
 backend/test_8mb.mp4
+GEMINI.md
+node_modules

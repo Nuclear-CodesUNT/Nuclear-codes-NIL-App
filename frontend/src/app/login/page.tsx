@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Login() {
   const router = useRouter();
@@ -32,8 +33,12 @@ export default function Login() {
       if (!res.ok) throw new Error(data.message || "Login failed");
       login(data); // update context
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Error");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +107,7 @@ export default function Login() {
           </form>
           <div>
             <p className="pt-6 flex justify-center text-black">
-              Don't have an account?
+              Don&apos;t have an account?
               <Link href="/signup" className="ml-1 text-cyan-300 hover:underline">Sign up</Link>
             </p>
           </div>
@@ -116,11 +121,14 @@ export default function Login() {
             Your NIL Solution,<br/> All in One Platform.
           </h1>
           <p className="text-gray-300 text-lg italic mb-6">
-            "My favorite platform man, they really got me right. I made the most out of my contract, learned how to best manage my resources, and got into contact with companies like Nike!"
+            &quot;My favorite platform man, they really got me right. I made the most out of my contract, learned how to best manage my resources, and got into contact with companies like Nike!&quot;
           </p>
           <div className="flex items-center gap-3">
-            <img
+            <Image
               src="/images/lebron.svg"
+              alt="Lebron James"
+              width={48}
+              height={48}
               className="w-12 h-12 rounded-full object-cover"
             />
             <div>
