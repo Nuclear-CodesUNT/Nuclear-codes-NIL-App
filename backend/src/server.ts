@@ -11,6 +11,7 @@ import videoRoutes from "./routes/videoRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import uploadRouter from "./routes/upload.js";
+import contractsRouter from "./routes/contracts.js";
 
 import { isLawyer } from "./middleware/isLawyer.js";
 
@@ -71,6 +72,7 @@ async function start() {
     app.use("/api/videos", videoRoutes);
     app.use("/api/progress", progressRoutes);
     app.use("/api/bookmarks", bookmarkRoutes);
+    app.use("/api/contracts", contractsRouter);
     app.use("/api/upload", isLawyer, uploadRouter);
 
     // 4) Start server last
