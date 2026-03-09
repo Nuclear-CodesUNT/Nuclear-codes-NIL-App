@@ -10,6 +10,8 @@ import authRoutes from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
 import contractsRouter from './routes/contracts.js'; 
 import getprofileRouter from "./routes/getprofile.js";
+import usersRouter from './routes/user.js';
+import inviteCodeRoutes from './routes/inviteCode.js';
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -39,5 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRouter);
 app.use('/api/contracts', contractsRouter);
 app.use("/api/profile", getprofileRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/invite-codes', inviteCodeRoutes);
 
 export default app;
