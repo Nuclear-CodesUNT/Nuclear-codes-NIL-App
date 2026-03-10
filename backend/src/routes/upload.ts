@@ -17,6 +17,7 @@ const upload = multer({
       process.env.ALLOWED_FILE_TYPES ||
       [
         // videos
+        "video/avi",
         "video/mp4",
         "video/quicktime",
         "video/webm",
