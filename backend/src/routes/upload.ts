@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
-import multer from "multer";
+import multer, { FileFilterCallback } from "multer";
+import path from "path";
+import { promises as fs } from "fs";
 
 import Video from "../models/Videos.js";
 import { getAssumedS3 } from "../utils/aws.js";
@@ -10,48 +12,63 @@ const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || "10485760", 10),
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || "524288000", 10),
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: FileFilterCallback
+  ) => {
     const allowedTypes = (
       process.env.ALLOWED_FILE_TYPES ||
       [
-        // videos
         "video/avi",
         "video/mp4",
         "video/quicktime",
         "video/webm",
-        // docs
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        // fallback for some clients
         "application/octet-stream",
       ].join(",")
     )
       .split(",")
       .map((t) => t.trim());
 
-    const allowedExt = ["mp4", "mov", "webm", "pdf", "doc", "docx"];
+    const allowedExt = ["avi", "mp4", "mov", "webm", "pdf", "doc", "docx"];
     const ext = (file.originalname.split(".").pop() || "").toLowerCase();
 
     if (!allowedExt.includes(ext)) {
       return cb(
-        new Error("Invalid file extension. Allowed: .pdf, .doc, .docx, .mp4, .mov, .webm."),
-        false
+        new Error("Invalid file extension. Allowed: .avi, .pdf, .doc, .docx, .mp4, .mov, .webm.")
       );
     }
 
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(
-        new Error(`Invalid file type (${file.mimetype}). Allowed: PDF/DOC/DOCX/MP4/MOV/WEBM.`),
-        false
+        new Error(`Invalid file type (${file.mimetype}). Allowed: AVI/PDF/DOC/DOCX/MP4/MOV/WEBM.`)
       );
     }
 
     return cb(null, true);
   },
 });
+
+async function ensureUploadsDir() {
+  const dir = path.join(process.cwd(), "uploads");
+  await fs.mkdir(dir, { recursive: true });
+  return dir;
+}
+
+function baseUrlFromRequest(req: Request) {
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
+  const host = req.get("host");
+  return host ? `${proto}://${host}` : "";
+}
+
+function safeFilename(original: string) {
+  return original.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
 
 router.post("/", upload.single("file"), async (req: Request, res: Response) => {
   let tempVideoPath: string | null = null;
@@ -62,50 +79,89 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    const s3 = await getAssumedS3();
-    const bucket = process.env.S3_BUCKET_NAME!;
+    const useLocalUploads =
+      process.env.USE_LOCAL_UPLOADS === "true" ||
+      !process.env.S3_BUCKET_NAME ||
+      !process.env.AWS_REGION;
+
     const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
     const isVideo = ["mp4", "mov", "webm"].includes(ext);
 
-    // Upload file to S3
-    const key = `uploads/${Date.now()}-${req.file.originalname}`;
-    const uploadResult = await s3
-      .upload({
-        Bucket: bucket,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-      .promise();
+    let videoUrl = "";
+    let key = "";
+    let thumbnailUrl = "";
+    let thumbnailKey = "";
+    let durationSeconds = 0;
+
+    if (useLocalUploads) {
+      const uploadsDir = await ensureUploadsDir();
+      const filename = `${Date.now()}-${safeFilename(req.file.originalname)}`;
+      const dest = path.join(uploadsDir, filename);
+      await fs.writeFile(dest, req.file.buffer);
+
+      key = filename;
+      const base = baseUrlFromRequest(req);
+      videoUrl = base ? `${base}/uploads/${encodeURIComponent(filename)}` : "";
+    } else {
+      const s3 = await getAssumedS3();
+      const bucket = process.env.S3_BUCKET_NAME!;
+      key = `uploads/${Date.now()}-${safeFilename(req.file.originalname)}`;
+      const uploadResult = await s3
+        .upload({
+          Bucket: bucket,
+          Key: key,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+        })
+        .promise();
+      videoUrl = uploadResult.Location;
+    }
 
     // If it's not a video, return S3 info only (no Video doc)
     if (!isVideo) {
       return res.status(200).json({
         success: true,
-        message: "File uploaded to S3!",
-        s3Url: uploadResult.Location,
+        message: "File uploaded!",
+        s3Url: videoUrl,
         key,
       });
     }
 
     // For videos: compute duration + thumbnail
     tempVideoPath = await writeTempFile(req.file.buffer, req.file.originalname);
-    const durationSeconds = await getDurationSeconds(tempVideoPath);
+    durationSeconds = await getDurationSeconds(tempVideoPath);
 
-    tempThumbPath = await generateThumbnail(tempVideoPath);
-
-    // Upload thumbnail to S3
-    const thumbKey = `thumbnails/${Date.now()}-${req.file.originalname.replace(/\.[^/.]+$/, "")}.jpg`;
-    const thumbBuffer = await (await import("fs/promises")).readFile(tempThumbPath);
-
-    const thumbUpload = await s3
-      .upload({
-        Bucket: bucket,
-        Key: thumbKey,
-        Body: thumbBuffer,
-        ContentType: "image/jpeg",
-      })
-      .promise();
+    try {
+      tempThumbPath = await generateThumbnail(tempVideoPath);
+      if (tempThumbPath) {
+        if (useLocalUploads) {
+          const uploadsDir = await ensureUploadsDir();
+          const thumbName = `${Date.now()}-${safeFilename(req.file.originalname.replace(/\.[^/.]+$/, ""))}.jpg`;
+          const thumbDest = path.join(uploadsDir, thumbName);
+          await fs.copyFile(tempThumbPath, thumbDest);
+          thumbnailKey = thumbName;
+          const base = baseUrlFromRequest(req);
+          thumbnailUrl = base ? `${base}/uploads/${encodeURIComponent(thumbName)}` : "";
+        } else {
+          const s3 = await getAssumedS3();
+          const bucket = process.env.S3_BUCKET_NAME!;
+          const thumbKey = `thumbnails/${Date.now()}-${safeFilename(req.file.originalname.replace(/\.[^/.]+$/, ""))}.jpg`;
+          const thumbBuffer = await (await import("fs/promises")).readFile(tempThumbPath);
+          const thumbUpload = await s3
+            .upload({
+              Bucket: bucket,
+              Key: thumbKey,
+              Body: thumbBuffer,
+              ContentType: "image/jpeg",
+            })
+            .promise();
+          thumbnailKey = thumbKey;
+          thumbnailUrl = thumbUpload.Location;
+        }
+      }
+    } catch {
+      // Best-effort thumbnails; if ffmpeg isn't available, still allow upload
+    }
 
     // Create Video record
     const titleFromName =
@@ -114,24 +170,27 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
     const createdVideo = await Video.create({
       title: titleFromName,
       description: (req.body.description as string) || "",
-      videoUrl: uploadResult.Location,
+      videoUrl,
       s3Key: key,
-      thumbnailUrl: thumbUpload.Location,
-      thumbnailKey: thumbKey,
+      thumbnailUrl,
+      thumbnailKey,
       durationSeconds,
       status: (req.body.status as any) || "draft",
     });
 
     // Cleanup temp files
-    await cleanupFiles([tempVideoPath, tempThumbPath]);
+    const tempPaths: string[] = [];
+    if (tempVideoPath) tempPaths.push(tempVideoPath);
+    if (tempThumbPath) tempPaths.push(tempThumbPath);
+    await cleanupFiles(tempPaths);
 
     return res.status(200).json({
       success: true,
       message: "Video uploaded to S3 and saved to DB!",
-      s3Url: uploadResult.Location,
+      s3Url: videoUrl,
       key,
-      thumbnailUrl: thumbUpload.Location,
-      thumbnailKey: thumbKey,
+      thumbnailUrl,
+      thumbnailKey,
       durationSeconds,
       video: createdVideo,
     });

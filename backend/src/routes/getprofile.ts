@@ -47,18 +47,73 @@ router.put("/", async (req, res) => {
     let updateData: any = {};
 
     if (user.role === "athlete") {
-      profileModel = Athlete;
-      updateData = {
-        playerName: req.body.playerName,
-        sport: req.body.sport,
-        position: req.body.position,
-        teamName: req.body.teamName,
-        location: req.body.location,
-        bio: req.body.bio,
-        profilepicture: req.body.profilepicture,
-        stats: req.body.stats || {},
-        gameDays: req.body.gameDays || []
-      };
+      // Athlete update needs special handling.
+      // After the highlights refactor (moving highlights to `athlete.highlights[]`),
+      // some existing Mongo docs may still contain legacy `gameDays[].highlights[]`.
+      // The frontend sends `gameDays` without those legacy nested highlights, so
+      // overwriting `gameDays` would silently wipe them unless we migrate first.
+      const athleteDoc = await Athlete.findOne({ userId });
+      if (!athleteDoc) {
+        return res.status(404).json({ error: "Athlete profile not found" });
+      }
+
+      // Pull a lean copy so we can see any legacy nested fields that are no longer
+      // part of the Mongoose schema.
+      const athleteLean = await Athlete.findOne({ userId }).lean();
+
+      const existingTopLevel = Array.isArray((athleteDoc as any).highlights)
+        ? ((athleteDoc as any).highlights as any[])
+        : [];
+      const existingKeySet = new Set(
+        existingTopLevel.map((h) => `${String(h?.videoId || "")}::${String(h?.gameDayId || "")}`)
+      );
+
+      const legacyGameDays = Array.isArray((athleteLean as any)?.gameDays) ? (athleteLean as any).gameDays : [];
+      const migratedFromLegacy: any[] = [];
+      for (const gd of legacyGameDays) {
+        const gdId = gd?._id ? String(gd._id) : "";
+        const legacyHighlights = Array.isArray(gd?.highlights) ? gd.highlights : [];
+        for (const h of legacyHighlights) {
+          const vid = h?.videoId ? String(h.videoId) : "";
+          if (!vid || !gdId) continue;
+          const key = `${vid}::${gdId}`;
+          if (existingKeySet.has(key)) continue;
+          existingKeySet.add(key);
+          migratedFromLegacy.push({
+            videoId: h.videoId,
+            gameDayId: gd._id,
+            addedAt: h?.addedAt ? new Date(h.addedAt) : new Date(),
+          });
+        }
+      }
+
+      if (migratedFromLegacy.length) {
+        (athleteDoc as any).highlights = [...existingTopLevel, ...migratedFromLegacy];
+      }
+
+      (athleteDoc as any).sport = req.body.sport;
+      (athleteDoc as any).position = req.body.position;
+      (athleteDoc as any).teamName = req.body.teamName;
+      (athleteDoc as any).location = req.body.location;
+      (athleteDoc as any).bio = req.body.bio;
+      (athleteDoc as any).profilepicture = req.body.profilepicture;
+      (athleteDoc as any).stats = req.body.stats || {};
+
+      const incomingGameDays = Array.isArray(req.body.gameDays) ? req.body.gameDays : [];
+
+      const mergedGameDays = incomingGameDays.map((gd: any) => {
+        return {
+          _id: gd?._id,
+          date: gd?.date,
+          homeAway: gd?.homeAway,
+          opponent: gd?.opponent,
+        };
+      });
+
+      (athleteDoc as any).gameDays = mergedGameDays;
+      const updatedProfile = await athleteDoc.save();
+
+      return res.json({ user, profile: updatedProfile });
     } else if (user.role === "coach") {
       profileModel = Coach;
       updateData = {

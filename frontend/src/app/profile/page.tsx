@@ -5,16 +5,18 @@ import { useEffect, useState } from 'react';
 import { DayPicker } from "react-day-picker";
 import { Share2, UserPlus, MessageSquare, Trophy, MapPin, CalendarDays, Eye, ThumbsUp, MessageCircle } from "lucide-react";
 import "react-day-picker/style.css";
+import Image from 'next/image';
 
 interface GameDay {
-  _id: string;          
-  date: string;      
+  _id: string;
+  date: string;
   homeAway: "Home" | "Away";
   opponent: string;
 }
 
 interface AthleteInformation {
-  userId: string; 
+  userId: string;
+  athleteId?: string;
   playerName: string;
   sport?: string;
   position?: string;
@@ -26,17 +28,33 @@ interface AthleteInformation {
   gameDays?: GameDay[];
 }
 
+interface Highlight {
+  highlightId: string;
+  gameDayId: string;
+  gameDay: { date: string; homeAway: "Home" | "Away"; opponent: string };
+  videoId: string;
+  title: string;
+  thumbnailUrl?: string;
+  videoUrl?: string;
+  addedAt?: string;
+}
+
 
 export default function AthleteProfile() {
   const [profile, setProfile] = useState<AthleteInformation | null>(null);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [activeHighlightId, setActiveHighlightId] = useState<string>("");
+  const [highlightsError, setHighlightsError] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/profile", {
+        const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+        const res = await fetch(`${API_ORIGIN}/api/profile`, {
           credentials: "include"
         });
 
@@ -48,8 +66,11 @@ export default function AthleteProfile() {
           return;
         }
 
+        const athleteId = data.profile?._id;
+
         setProfile({
           userId: data.profile.userId,
+          athleteId,
           playerName: data.user.name,
           sport: data.profile?.sport,
           position: data.profile?.position,
@@ -60,10 +81,31 @@ export default function AthleteProfile() {
           stats: data.profile?.stats ? Object.entries(data.profile.stats) : [],
           gameDays: data.profile?.gameDays || []
         });
-        
+
+        if (athleteId) {
+          try {
+            setHighlightsError("");
+            const hRes = await fetch(`${API_ORIGIN}/api/athletes/${athleteId}/highlights`, {
+              credentials: "include",
+            });
+            const hData = await hRes.json().catch(() => ({}));
+            if (!hRes.ok) {
+              setHighlightsError(hData?.message || hData?.error || `Failed to load highlights (HTTP ${hRes.status})`);
+            } else {
+              const list: Highlight[] = Array.isArray(hData.highlights) ? hData.highlights : [];
+              setHighlights(list);
+              if (list.length > 0) {
+                setActiveHighlightId((prev) => prev || String(list[0].highlightId));
+              }
+            }
+          } catch {
+            setHighlightsError("Could not reach highlights API");
+          }
+        }
+
         setLoggedInUserId(data.user._id);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError("Network error");
         setLoading(false);
       }
@@ -81,14 +123,26 @@ export default function AthleteProfile() {
   }
 
   const gameDates: Date[] = profile?.gameDays?.map((g) => new Date(g.date)) || [];
-  const placeholderHighlights = [
-    { id: 1, image: "/images/court.png", views: "2.3k", likes: "120", comments: "15", date: "Oct 10, 2025" },
-    { id: 2, image: "/images/court.png", views: "1.1k", likes: "98", comments: "8", date: "Oct 8, 2025" },
-    { id: 3, image: "/images/court.png", views: "3.4k", likes: "200", comments: "30", date: "Oct 5, 2025" },
-    { id: 4, image: "/images/court.png", views: "2.3k", likes: "120", comments: "15", date: "Oct 10, 2025" },
-    { id: 5, image: "/images/court.png", views: "1.1k", likes: "98", comments: "8", date: "Oct 8, 2025" },
-    { id: 6, image: "/images/court.png", views: "3.4k", likes: "200", comments: "30", date: "Oct 5, 2025" },
-  ];
+  const activeHighlight = highlights.find((h) => String(h.highlightId) === String(activeHighlightId)) || null;
+  const activeVideoUrl = activeHighlight?.videoUrl || "";
+
+  const formatGameDayLine = (gd: Highlight["gameDay"]) => {
+    const d = new Date(String(gd?.date || ""));
+    const dateLabel = Number.isFinite(d.getTime()) ? d.toLocaleDateString() : "";
+    const matchup = `${gd.homeAway} vs ${gd.opponent}`;
+    return dateLabel ? `${matchup} • ${dateLabel}` : matchup;
+  };
+
+  const formatHighlightCardDate = (h: Highlight) => {
+    // Keep thumbnail date in sync with the title's game-day date.
+    const gameDayDate = h?.gameDay?.date ? new Date(String(h.gameDay.date)) : null;
+    if (gameDayDate && Number.isFinite(gameDayDate.getTime())) {
+      return gameDayDate.toLocaleDateString();
+    }
+
+    const addedAt = h?.addedAt ? new Date(String(h.addedAt)) : null;
+    return addedAt && Number.isFinite(addedAt.getTime()) ? addedAt.toLocaleDateString() : "";
+  };
 
   return (
     <>
@@ -99,7 +153,7 @@ export default function AthleteProfile() {
         <div className="flex flex-col gap-6 pr-4">
 
           {/* Player Profile Frame */} {/* Scaling tweaks needed to fix smaller screen flexing */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6 relative">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white border border-gray-300 rounded-lg p-8 pb-1 gap-6 relative">
             {/* Edit Profile Button */}
             {profile?.userId === loggedInUserId && (
               <Link
@@ -112,8 +166,11 @@ export default function AthleteProfile() {
 
             {/* Profile picture */}
             <div className="flex-shrink-0">
-              <img
+              <Image
                 src={profile?.profilepicture || "/images/ProfilepicPlaceholder.png"}
+                alt="Profile picture"
+                width={160}
+                height={160}
                 className="w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border border-gray-200"
               />
             </div>
@@ -189,41 +246,79 @@ export default function AthleteProfile() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Recent Highlights</h2>
-              <span className="text-sm text-gray-500">{placeholderHighlights.length} Videos</span>
+              <span className="text-sm text-gray-500">{highlights.length} Videos</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {placeholderHighlights.map((highlight) => (
-              <div
-                key={highlight.id}
-                className="overflow-hidden rounded-lg border border-gray-200 flex flex-col"
-              >
-                {/* Image */}
-                <div className="w-full h-40 sm:h-48 overflow-hidden">
-                  <img
-                    src={highlight.image}
-                    alt={`Highlight ${highlight.id}`}
-                    className="w-full h-full object-cover"
-                  />
+            {highlightsError && (
+              <div className="mb-3 text-sm text-red-600">
+                {highlightsError}
+              </div>
+            )}
+
+            {/* Large video player */}
+            {activeVideoUrl && (
+              <div className="relative bg-black aspect-video rounded-lg overflow-hidden border border-gray-200 mb-3">
+                <video
+                  key={activeHighlightId}
+                  src={activeVideoUrl}
+                  controls
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Active highlight title + associated game day (YouTube-style) */}
+            {activeHighlight && (
+              <div className="mb-6">
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
+                  {activeHighlight.title || "Highlight"}
                 </div>
-
-                {/* Hightlight info  */}
-                <div className="p-3 flex flex-col gap-1">
-                  {/* Highlight title */}
-                  <h3 className="text-sm font-semibold text-gray-800">Highlight {highlight.id}</h3>
-
-                  {/* Highlight stats */}
-                  <div className="flex gap-4 text-xs text-gray-700">
-                    <div className="flex items-center gap-1"><Eye className="w-4 h-4" />{highlight.views}</div>
-                    <div className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" />{highlight.likes}</div>
-                    <div className="flex items-center gap-1"><MessageCircle className="w-4 h-4" />{highlight.comments}</div>
-                  </div>
-
-                  {/* Date */}
-                  <div className="text-xs text-gray-500">{highlight.date}</div>
+                <div className="text-sm text-gray-600">
+                  {formatGameDayLine(activeHighlight.gameDay)}
                 </div>
               </div>
-            ))}
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {highlights.length > 0 ? (
+                highlights.map((highlight) => (
+                  <button
+                    key={highlight.highlightId}
+                    type="button"
+                    onClick={() => setActiveHighlightId(String(highlight.highlightId))}
+                    className="overflow-hidden rounded-lg border border-gray-200 flex flex-col"
+                    aria-label={highlight.title || "Highlight"}
+                  >
+                    <div className="w-full h-40 sm:h-48 overflow-hidden">
+                      <Image
+                        src={highlight.thumbnailUrl || "/images/court.png"}
+                        alt={highlight.title || "Highlight"}
+                        width={640}
+                        height={360}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="p-3 flex flex-col gap-1">
+                      <h3 className="text-sm font-semibold text-gray-800 truncate">
+                        {highlight.title || "Highlight"}
+                      </h3>
+
+                      <div className="flex gap-4 text-xs text-gray-700">
+                        <div className="flex items-center gap-1"><Eye className="w-4 h-4" />--</div>
+                        <div className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" />--</div>
+                        <div className="flex items-center gap-1"><MessageCircle className="w-4 h-4" />--</div>
+                      </div>
+
+                      <div className="text-xs text-gray-500">
+                        {formatHighlightCardDate(highlight)}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500">No highlights yet.</div>
+              )}
 
             </div>
           </div>
@@ -244,7 +339,7 @@ export default function AthleteProfile() {
                   showOutsideDays
                   selected={gameDates} // highlight selected dates
                   modifiers={{
-                    gameDay: gameDates, 
+                    gameDay: gameDates,
                   }}
                   modifiersClassNames={{
                     gameDay: "bg-blue-100 rounded-full", // circle and color
@@ -262,7 +357,7 @@ export default function AthleteProfile() {
           </div>
 
           <div>
-          {/* Game Days */}
+            {/* Game Days */}
             <ul className="space-y-4">
               {profile?.gameDays && profile.gameDays.length > 0 ? (
                 profile.gameDays
@@ -282,11 +377,10 @@ export default function AthleteProfile() {
                         <span className="text-lg">
                           vs {game.opponent}
                           <span
-                            className={`text-sm font-normal border px-2 py-1 rounded-lg ml-3 ${
-                              game.homeAway === "Home"
-                                ? "bg-green-100 text-green-700 border-green-300"
-                                : "bg-blue-100 text-blue-700 border-blue-300"
-                            }`}
+                            className={`text-sm font-normal border px-2 py-1 rounded-lg ml-3 ${game.homeAway === "Home"
+                              ? "bg-green-100 text-green-700 border-green-300"
+                              : "bg-blue-100 text-blue-700 border-blue-300"
+                              }`}
                           >
                             {game.homeAway}
                           </span>
@@ -311,7 +405,7 @@ export default function AthleteProfile() {
                       </span>
                     </li>
                   ))
-                ) : (
+              ) : (
                 <li className="text-sm text-gray-500 text-center py-4">
                   No games scheduled
                 </li>

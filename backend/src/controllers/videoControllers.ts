@@ -5,6 +5,24 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 
+// NOTE: This helper is also imported by the athlete highlights API.
+// It generates a temporary, signed GET URL for private S3 video objects so the
+// frontend can play them without making the bucket public.
+export async function trySignS3GetObjectUrl(key: string, expiresInSeconds = 60 * 60): Promise<string | null> {
+  const bucket = process.env.S3_BUCKET_NAME ?? process.env.AWS_S3_BUCKET;
+  const region = process.env.AWS_REGION;
+  if (!bucket || !region) return null;
+
+  try {
+    const s3 = await createS3SigningClient(region);
+    const cmd = new GetObjectCommand({ Bucket: bucket, Key: key });
+    return await getSignedUrl(s3, cmd, { expiresIn: expiresInSeconds });
+  } catch (err) {
+    console.error("S3 signing error:", err);
+    return null;
+  }
+}
+
 async function createS3SigningClient(region: string) {
   const roleArn = process.env.AWS_ASSUME_ROLE_ARN;
 
@@ -42,38 +60,18 @@ export const getAllVideos = async (req: Request, res: Response) => {
   try {
     const videos = await Videos.find().sort({ createdAt: -1 });
 
-    // Attempt to generate signed GET URLs for private S3 objects when possible.
-    const bucket = process.env.S3_BUCKET_NAME ?? process.env.AWS_S3_BUCKET;
-    const region = process.env.AWS_REGION;
-
     let outVideos: any[] = videos;
 
-    if (bucket && region) {
-      try {
-        const s3 = await createS3SigningClient(region);
-        const plain = videos.map((v) => (v.toObject ? v.toObject() : v));
-
-        outVideos = await Promise.all(
-          plain.map(async (vid) => {
-            if (vid.s3Key) {
-              try {
-                const key = String(vid.s3Key);
-                const cmd = new GetObjectCommand({ Bucket: bucket, Key: key });
-                const signed = await getSignedUrl(s3, cmd, { expiresIn: 60 * 60 }); // 1 hour
-                vid.videoUrl = signed;
-              } catch (err) {
-                console.error("Error generating signed url for", vid._id, err);
-                // leave vid.videoUrl as stored
-              }
-            }
-            return vid;
-          })
-        );
-      } catch (err) {
-        console.error("S3 signing error:", err);
-        outVideos = videos as any[];
-      }
-    }
+    const plain = videos.map((v) => (v.toObject ? v.toObject() : v));
+    outVideos = await Promise.all(
+      plain.map(async (vid) => {
+        if (vid.s3Key) {
+          const signed = await trySignS3GetObjectUrl(String(vid.s3Key));
+          if (signed) vid.videoUrl = signed;
+        }
+        return vid;
+      })
+    );
 
     return res.status(200).json({
       success: true,
@@ -111,22 +109,12 @@ export const getVideoById = async (req: Request, res: Response) => {
       });
     }
 
-    // If we have S3 config and a key, generate a signed GET URL for this video
-    const bucket = process.env.S3_BUCKET_NAME ?? process.env.AWS_S3_BUCKET;
-    const region = process.env.AWS_REGION;
-
     let outVideo: any = video;
-    if (bucket && region && (video as any).s3Key) {
-      try {
-        const s3 = await createS3SigningClient(region);
-        const key = String((video as any).s3Key);
-        const cmd = new GetObjectCommand({ Bucket: bucket, Key: key });
-        const signed = await getSignedUrl(s3, cmd, { expiresIn: 60 * 60 }); // 1 hour
+    if ((video as any).s3Key) {
+      const signed = await trySignS3GetObjectUrl(String((video as any).s3Key));
+      if (signed) {
         outVideo = (video as any).toObject ? (video as any).toObject() : video;
         outVideo.videoUrl = signed;
-      } catch (err) {
-        console.error("Error generating signed url for video id", id, err);
-        // fallback to stored videoUrl if signing fails
       }
     }
 

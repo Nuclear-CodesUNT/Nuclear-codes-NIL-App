@@ -1,9 +1,10 @@
-import 'dotenv/config'; 
+import 'dotenv/config';
 import express from 'express';
 import type { Express } from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 import authRoutes from './routes/auth.js';
@@ -15,6 +16,7 @@ import progressRoutes from "./routes/progressRoutes.js";
 import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import uploadRouter from "./routes/upload.js";
 import contractsRouter from "./routes/contracts.js";
+import athletesRouter from "./routes/athletes.js";
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -24,6 +26,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Local uploads (dev-friendly): serve files written to ./uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Session management
 app.use(session({
@@ -47,6 +52,7 @@ app.use("/api/profile", getprofileRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/invite-codes', inviteCodeRoutes);
 app.use("/api/videos", videoRoutes);
+app.use("/api/athletes", athletesRouter);
 app.use("/api/progress", progressRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/contracts", contractsRouter);
