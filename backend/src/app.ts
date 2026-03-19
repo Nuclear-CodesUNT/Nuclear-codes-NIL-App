@@ -13,6 +13,10 @@ import usersRouter from './routes/user.js';
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Required for Railway/proxied HTTPS — must be set before session middleware
+app.set('trust proxy', 1);
 
 app.use(cors({
   origin: ORIGIN,
@@ -27,7 +31,10 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI! }),
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+    secure: isProduction,       // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax', // cross-site cookies in production
+    httpOnly: true
   }
 }));
 
