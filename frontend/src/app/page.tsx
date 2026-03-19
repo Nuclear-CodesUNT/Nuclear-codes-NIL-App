@@ -58,12 +58,12 @@ function HeroSection() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <button className="rounded-xl bg-[#27469a] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95">
+            <a href="/signup" className="rounded-xl bg-[#27469a] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95">
               Join as Athlete
-            </button>
-            <button className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50">
+            </a>
+            <a href="/signup" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50">
               Partner as Brand
-            </button>
+            </a>
           </div>
         </div>
 
