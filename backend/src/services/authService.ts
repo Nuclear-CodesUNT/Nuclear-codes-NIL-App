@@ -86,31 +86,42 @@ export const registerUser = async (userData: UserData) => {
     throw new Error('MISSING_FIELDS');
   }
 
-  // check if user exists
   const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error('USER_EXISTS');
-  }
+  if (existingUser) throw new Error('USER_EXISTS');
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // create base user
+  // store role in lowercase
   const newUser = new User({
     name,
     email,
     password: hashedPassword,
-    ...(role ? { role } : {})
+    ...(role ? { role: role.toLowerCase() } : {}),
   });
   await newUser.save();
 
-  // If role provided, create role-specific profile
+  // Only create role profile if all required fields are present
   if (role) {
-    try {
-      await createRoleProfile(newUser._id, role, roleSpecificData as RoleSpecificData);
-    } catch (error) {
-      // If profile creation fails, cleanup the user
-      await User.findByIdAndDelete(newUser._id);
-      throw error;
+    const allFieldsPresent = (() => {
+      switch (role.toLowerCase()) {
+        case 'athlete':
+          return roleSpecificData.school && roleSpecificData.currentYear && roleSpecificData.sport && roleSpecificData.position;
+        case 'coach':
+          return roleSpecificData.school && roleSpecificData.sport;
+        case 'lawyer':
+          return roleSpecificData.barNumber && roleSpecificData.state && roleSpecificData.yearsOfExperience !== undefined;
+        default:
+          return false;
+      }
+    })();
+
+    if (allFieldsPresent) {
+      try {
+        await createRoleProfile(newUser._id, role.toLowerCase(), roleSpecificData as RoleSpecificData);
+      } catch (error) {
+        await User.findByIdAndDelete(newUser._id);
+        throw error;
+      }
     }
   }
 

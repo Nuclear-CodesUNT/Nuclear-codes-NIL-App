@@ -1,39 +1,70 @@
 import { type Request, type Response } from 'express';
 import * as AuthService from '../services/authService.js';
+import InviteCode from '../models/InviteCode.js';
 
 export const signup = async (req: Request, res: Response) => {
   try {
+
+    const { inviteCode } = req.body;
+
+    if (!inviteCode) {
+      return res.status(400).json({ message: 'Invite code is required' });
+    }
+
+    const invite = await InviteCode.findOne({ code: inviteCode });
+
+    if (!invite) {
+      return res.status(400).json({ message: 'Invalid invite code' });
+    }
+
+    if (!invite.usesLeft || invite.usesLeft <= 0) {
+      return res.status(400).json({ message: 'Invite code has no uses remaining' });
+    }
+
+    // assign role from invite code
+    req.body.role = invite.role;
+
     const newUser = await AuthService.registerUser(req.body);
+
+    // decrement invite uses
+    invite.usesLeft -= 1;
+    await invite.save();
 
     req.session.userId = String(newUser._id);
 
-    return res.status(201).json({ 
-      id: newUser._id, 
-      name: newUser.name, 
+    return res.status(201).json({
+      id: newUser._id,
+      name: newUser.name,
       email: newUser.email,
-      role: newUser.role 
+      role: newUser.role
     });
 
   } catch (error: any) {
+
     console.error('Signup error:', error);
 
     if (error.message === 'MISSING_FIELDS') {
-        return res.status(400).json({ message: 'Name, email, and password are required' });
+      return res.status(400).json({ message: 'Name, email, and password are required' });
     }
+
     if (error.message === 'USER_EXISTS') {
-        return res.status(400).json({ message: 'User already exist with this email' });
+      return res.status(400).json({ message: 'User already exist with this email' });
     }
+
     if (error.message === 'MISSING_ATHLETE_FIELDS') {
-        return res.status(400).json({ message: 'School, current year, sport, and position are required for athletes' });
+      return res.status(400).json({ message: 'School, current year, sport, and position are required for athletes' });
     }
+
     if (error.message === 'MISSING_LAWYER_FIELDS') {
-        return res.status(400).json({ message: 'Bar number, state, and years of experience are required for lawyers' });
+      return res.status(400).json({ message: 'Bar number, state, and years of experience are required for lawyers' });
     }
+
     if (error.message === 'MISSING_COACH_FIELDS') {
-        return res.status(400).json({ message: 'School and sport are required for coaches' });
+      return res.status(400).json({ message: 'School and sport are required for coaches' });
     }
+
     if (error.message === 'INVALID_ROLE') {
-        return res.status(400).json({ message: 'Invalid role specified' });
+      return res.status(400).json({ message: 'Invalid role specified' });
     }
 
     return res.status(500).json({ message: 'Internal server error' });

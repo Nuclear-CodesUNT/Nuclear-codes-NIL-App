@@ -15,12 +15,14 @@ export default function Signup() {
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
+    inviteCode: "",
     firstName: "",
     lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +32,7 @@ export default function Signup() {
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         callback: handleGoogleResponse,
       });
+
       window.google.accounts.id.renderButton(
         document.getElementById("google-signup-btn"),
         { theme: "outline", size: "large", text: "signup_with", width: "100%" }
@@ -45,13 +48,21 @@ export default function Signup() {
           initGoogle();
         }
       }, 100);
+
       return () => clearInterval(interval);
     }
   }, []);
 
   const handleGoogleResponse = async (response: { credential: string }) => {
     setError("");
+
+    if (!formData.inviteCode) {
+      setError("Invite code is required to create an account");
+      return;
+    }
+
     setLoading(true);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000"}/api/auth/google`,
@@ -59,9 +70,13 @@ export default function Signup() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ token: response.credential }),
+          body: JSON.stringify({
+            token: response.credential,
+            inviteCode: formData.inviteCode,
+          }),
         }
       );
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Google sign-up failed");
 
@@ -72,6 +87,7 @@ export default function Signup() {
       } else {
         router.push("/dashboard");
       }
+
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -91,6 +107,11 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!formData.inviteCode) {
+      setError("Invite code is required");
+      return;
+    }
 
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
       setError("Please fill in all required fields");
@@ -117,6 +138,7 @@ export default function Signup() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
+            inviteCode: formData.inviteCode,
             name: `${formData.firstName} ${formData.lastName}`,
             email: formData.email,
             password: formData.password,
@@ -129,6 +151,7 @@ export default function Signup() {
 
       login(data);
       router.push("/complete-profile");
+
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -148,6 +171,7 @@ export default function Signup() {
         <h1 className="text-2xl font-bold text-black text-center mb-1">
           Create Your Account
         </h1>
+
         <p className="text-gray-500 text-center mb-6">
           Join the NIL Connect community
         </p>
@@ -158,7 +182,25 @@ export default function Signup() {
           </div>
         )}
 
-        {/* Google Sign-In */}
+        {/* Invite Code */}
+        <div className="mb-4">
+          <label htmlFor="inviteCode" className="block text-sm font-medium mb-1">
+            Invite Code
+          </label>
+
+          <input
+            type="text"
+            id="inviteCode"
+            name="inviteCode"
+            value={formData.inviteCode}
+            onChange={handleChange}
+            placeholder="Enter your invite code"
+            className="form-field"
+            required
+          />
+        </div>
+
+        {/* Google Sign-Up */}
         <div id="google-signup-btn" className="flex justify-center mb-4" />
 
         {/* Divider */}
@@ -168,16 +210,16 @@ export default function Signup() {
           <div className="flex-1 h-px bg-gray-300" />
         </div>
 
-        {/* Email/Password Form */}
+        {/* Email Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1">
                 First Name
               </label>
               <input
                 type="text"
-                id="firstName"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
@@ -186,13 +228,13 @@ export default function Signup() {
                 required
               />
             </div>
+
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Last Name
               </label>
               <input
                 type="text"
-                id="lastName"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
@@ -204,12 +246,12 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1">
               Email
             </label>
+
             <input
               type="email"
-              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -220,12 +262,12 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1">
               Password
             </label>
+
             <input
               type="password"
-              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -236,12 +278,12 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1">
               Confirm Password
             </label>
+
             <input
               type="password"
-              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
@@ -258,6 +300,7 @@ export default function Signup() {
           >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
+
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">

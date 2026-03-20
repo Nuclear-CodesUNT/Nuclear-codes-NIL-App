@@ -2,8 +2,11 @@
 import FeedCard from '../../components/dashboard-feedCard';
 import MessagesOverview from '../../components/dashboard-messages';
 import { ScrollArea } from '../../components/ui/scroll-area';
+import { useEffect, useState } from 'react';
 //import Image from 'next/image';
 //import Link from 'next/link';
+
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const feedData = [
   {
@@ -21,15 +24,33 @@ const feedData = [
 ];
 
 export default function Dashboard() {
-    return (
-    <div className="min-h-screen bg-white">      
+  const [athleteId, setAthleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await fetch(`${API_ORIGIN}/api/profile`, { credentials: "include" });
+        const data = await res.json();
+        if (!res.ok) return;
+        const id = data?.profile?._id;
+        if (typeof id === "string" && id) setAthleteId(id);
+      } catch {
+        // ignore
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white">
       <div className="flex gap-6 p-6 max-w-\[1600px\] mx-auto">
         {/* Main Feed - Left Side */}
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1">
             <div className="space-y-4 pr-4 max-w-\[700px\] mx-auto">
               {feedData.map((post) => (
-                <FeedCard key={post.id} {...post} />
+                <FeedCard key={post.id} {...post} athleteId={athleteId || undefined} />
               ))}
             </div>
           </ScrollArea>

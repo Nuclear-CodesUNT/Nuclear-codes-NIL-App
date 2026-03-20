@@ -5,6 +5,7 @@ import { AdminSidebar } from "../../components/admin-sidebar";
 import { AdminHeader } from "../../components/admin-header";
 import { UsersTable } from "../../components/users-table";
 import { ContractsTable } from "../../components/contracts-table";
+import { InviteCodesTable } from "../../components/invitecodes-table";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -36,6 +37,8 @@ export default function App() {
         return "Contract Management";
       case "users":
         return "Users";
+      case "invite-codes":
+        return "Invite Codes";
       default:
         return "Admin panel";
     }
@@ -47,6 +50,8 @@ export default function App() {
         return <ContractsTable />;
       case "users":
         return <UsersTable />;
+      case "invite-codes":
+        return <InviteCodesTable />;
       // default:
       //   return <ContractsTable />;
     }

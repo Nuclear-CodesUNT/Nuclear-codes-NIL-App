@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function NavBar() {
@@ -45,7 +45,18 @@ export default function NavBar() {
           </Link>
           {user && user.role && (
             <>
-              <Link href="/profile" className={navLinkClass("/profile")}>
+              <Link // Different links for different profile types
+                href={
+                  user?.role === "athlete"
+                    ? "/profile"
+                    : user?.role === "coach"
+                    ? "/coachprofile"
+                    : user?.role === "lawyer"
+                    ? "/lawyerprofile"
+                    : "/"
+                }
+                className={navLinkClass("/profile")}
+              >
                 <span>Profile</span>
               </Link>
               {(user.role === 'admin' || user.role === 'lawyer') && (
