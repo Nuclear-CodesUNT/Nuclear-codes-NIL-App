@@ -74,7 +74,7 @@ function HeroSection() {
                 src="/logo/NIL Law.svg"
                 alt="NIL Law logo"
                 fill
-                className="object-contain p-1"
+                className="object-contain p-8"
                 sizes="(max-width: 1024px) 100vw, 660px"
                 priority
               />
