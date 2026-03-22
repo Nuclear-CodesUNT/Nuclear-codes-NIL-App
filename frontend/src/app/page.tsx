@@ -75,7 +75,7 @@ function HeroSection() {
                 alt="NIL Law logo"
                 fill
                 className="object-contain p-1"
-                sizes="(max-width: 2024px) 200vw, 660px"
+                sizes="(max-width: 1024px) 100vw, 660px"
                 priority
               />
             </div>
