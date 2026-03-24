@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { MessageSquare, MapPin } from "lucide-react";
 import MessagesOverview from '../../components/dashboard-messages';
+import api from '@/lib/api';
 
 // Frontend interface for lawyer profile
 interface LawyerInformation {
@@ -27,17 +28,7 @@ export default function LawyerProfile() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/profile", {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error || "Failed to load profile");
-          setLoading(false);
-          return;
-        }
+        const { data } = await api.get('/profile');
 
         setProfile({
           userId: data.profile.userId,
@@ -53,8 +44,8 @@ export default function LawyerProfile() {
 
         setLoggedInUserId(data.user._id);
         setLoading(false);
-      } catch (err) {
-        setError("Network error");
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Network error");
         setLoading(false);
       }
     };
@@ -85,7 +76,7 @@ export default function LawyerProfile() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white/70 border border-gray-300 rounded-lg p-8 pb-10 gap-6">
             
             {/* Profile picture */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <img
                 src={profile?.profilepicture || "/images/ProfilepicPlaceholder.png"}
                 className="w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border border-gray-200"

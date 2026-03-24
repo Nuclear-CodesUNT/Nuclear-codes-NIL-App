@@ -3,10 +3,9 @@ import FeedCard from '../../components/dashboard-feedCard';
 import MessagesOverview from '../../components/dashboard-messages';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { useEffect, useState } from 'react';
+import api from '@/lib/api';
 //import Image from 'next/image';
 //import Link from 'next/link';
-
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const feedData = [
   {
@@ -29,9 +28,7 @@ export default function Dashboard() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch(`${API_ORIGIN}/api/profile`, { credentials: "include" });
-        const data = await res.json();
-        if (!res.ok) return;
+        const { data } = await api.get('/profile');
         const id = data?.profile?._id;
         if (typeof id === "string" && id) setAthleteId(id);
       } catch {

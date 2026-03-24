@@ -9,7 +9,8 @@ import "react-day-picker/style.css";
 import Link from "next/link";
 import Image from "next/image";
 
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import api from '@/lib/api';
+
 const MAX_GAME_DAYS = 6;
 
 interface GameDay {
@@ -124,37 +125,23 @@ export default function EditAthleteProfile({
         );
 
 
-      const res = await fetch(`${API_ORIGIN}/api/profile`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          playerName,
-          sport,
-          position,
-          teamName,
-          location,
-          bio,
-          profilepicture,
-          stats: statsObject,
-          gameDays: cleanedGameDays
-        })
+      await api.put('/profile', {
+        playerName,
+        sport,
+        position,
+        teamName,
+        location,
+        bio,
+        profilepicture,
+        stats: statsObject,
+        gameDays: cleanedGameDays,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Failed to update profile");
-        return;
-      }
 
       alert("Profile updated successfully");
       router.push("/profile");
 
-    } catch {
-      alert("Network error saving profile");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Network error saving profile");
     }
   };
 
@@ -169,11 +156,8 @@ export default function EditAthleteProfile({
 
   const refreshHighlights = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`${API_ORIGIN}/api/athletes/${id}/highlights`);
-      const data = await res.json();
-      if (res.ok) {
-        setHighlights(Array.isArray(data.highlights) ? data.highlights : []);
-      }
+      const { data } = await api.get(`/athletes/${id}/highlights`);
+      setHighlights(Array.isArray(data.highlights) ? data.highlights : []);
     } catch {
       // ignore
     }
@@ -185,15 +169,16 @@ export default function EditAthleteProfile({
     replaceOldest?: boolean;
     removeHighlightId?: string;
   }) {
-    const res = await fetch(`${API_ORIGIN}/api/athletes/me/highlights`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    return { res, data };
+    try {
+      const { data } = await api.post('/athletes/me/highlights', args);
+      return { ok: true, status: 200, data };
+    } catch (err: any) {
+      return {
+        ok: false,
+        status: err.response?.status ?? 500,
+        data: err.response?.data ?? {},
+      };
+    }
   }
 
   // Highlight upload: upload -> attach
@@ -222,19 +207,18 @@ export default function EditAthleteProfile({
       fd.append("title", file.name.replace(/\.[^/.]+$/, ""));
       fd.append("status", "published");
 
-      const upRes = await fetch(`${API_ORIGIN}/api/upload`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-
-      const upData = await upRes.json();
-      if (!upRes.ok || !upData?.video?._id) {
-        alert(upData?.error || upData?.message || "Upload failed");
+      let vid: string;
+      try {
+        const { data: upData } = await api.post('/upload', fd);
+        if (!upData?.video?._id) {
+          alert(upData?.message || "Upload failed");
+          return;
+        }
+        vid = String(upData.video._id);
+      } catch (err: any) {
+        alert(err.response?.data?.error || err.response?.data?.message || "Upload failed");
         return;
       }
-
-      const vid = String(upData.video._id);
       const { res: attRes, data: attData } = await attachHighlight({
         videoId: vid,
         gameDayId: String(selectedGameDayId),
@@ -272,18 +256,10 @@ export default function EditAthleteProfile({
   const handleDeleteHighlight = async (highlightId: string) => {
     if (!confirm("Remove this highlight from your profile?")) return;
     try {
-      const res = await fetch(`${API_ORIGIN}/api/athletes/me/highlights/${highlightId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data?.message || "Failed to remove highlight");
-        return;
-      }
+      await api.delete(`/athletes/me/highlights/${highlightId}`);
       if (athleteId) await refreshHighlights(athleteId);
-    } catch {
-      alert("Network error removing highlight");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Network error removing highlight");
     }
   };
 
@@ -309,13 +285,10 @@ export default function EditAthleteProfile({
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch(`${API_ORIGIN}/api/profile`, {
-          credentials: "include"
-        });
+        const { data } = await api.get('/profile');
 
-        const data = await res.json();
-        if (!res.ok) {
-          console.error("Failed to load profile:", data.error);
+        if (!data.profile) {
+          console.error("Failed to load profile: no profile data");
           return;
         }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import Link from "next/link";
+import api from '@/lib/api';
 
 // Coach interface for frontend
 interface CoachInformation {
@@ -36,13 +37,7 @@ export default function EditCoachProfile() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/profile", { credentials: "include" });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Failed to load profile");
-          setLoading(false);
-          return;
-        }
+        const { data } = await api.get('/profile');
 
         const p = data.profile;
 
@@ -57,9 +52,9 @@ export default function EditCoachProfile() {
         setSpecializationsInput((p?.specializations || []).join(", "));
 
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Network error loading profile", err);
-        setError("Network error loading profile");
+        setError(err.response?.data?.error || "Network error loading profile");
         setLoading(false);
       }
     };
@@ -84,33 +79,22 @@ export default function EditCoachProfile() {
         .map(s => s.trim())
         .filter(Boolean);
 
-      const res = await fetch("http://localhost:4000/api/profile", {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          school,
-          sport,
-          role,
-          yearsOfExperience,
-          certifications: certificationsArray,
-          achievements: achievementsArray,
-          bio,
-          profilePicture,
-          specializations: specializationsArray
-        }),
+      await api.put('/profile', {
+        school,
+        sport,
+        role,
+        yearsOfExperience,
+        certifications: certificationsArray,
+        achievements: achievementsArray,
+        bio,
+        profilePicture,
+        specializations: specializationsArray,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to update profile");
-        return;
-      }
 
       alert("Profile updated successfully");
       router.push("/coachprofile");
-    } catch (err) {
-      alert("Network error saving profile");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Network error saving profile");
     }
   };
 

@@ -6,6 +6,7 @@ import { DayPicker } from "react-day-picker";
 import { Share2, UserPlus, MessageSquare, Trophy, MapPin, CalendarDays, Eye, ThumbsUp, MessageCircle } from "lucide-react";
 import "react-day-picker/style.css";
 import Image from 'next/image';
+import api from '@/lib/api';
 
 interface GameDay {
   _id: string;
@@ -52,19 +53,7 @@ export default function AthleteProfile() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-        const res = await fetch(`${API_ORIGIN}/api/profile`, {
-          credentials: "include"
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error || "Failed to load profile");
-          setLoading(false);
-          return;
-        }
+        const { data } = await api.get('/profile');
 
         const athleteId = data.profile?._id;
 
@@ -85,28 +74,21 @@ export default function AthleteProfile() {
         if (athleteId) {
           try {
             setHighlightsError("");
-            const hRes = await fetch(`${API_ORIGIN}/api/athletes/${athleteId}/highlights`, {
-              credentials: "include",
-            });
-            const hData = await hRes.json().catch(() => ({}));
-            if (!hRes.ok) {
-              setHighlightsError(hData?.message || hData?.error || `Failed to load highlights (HTTP ${hRes.status})`);
-            } else {
-              const list: Highlight[] = Array.isArray(hData.highlights) ? hData.highlights : [];
-              setHighlights(list);
-              if (list.length > 0) {
-                setActiveHighlightId((prev) => prev || String(list[0].highlightId));
-              }
+            const { data: hData } = await api.get(`/athletes/${athleteId}/highlights`);
+            const list: Highlight[] = Array.isArray(hData.highlights) ? hData.highlights : [];
+            setHighlights(list);
+            if (list.length > 0) {
+              setActiveHighlightId((prev) => prev || String(list[0].highlightId));
             }
-          } catch {
-            setHighlightsError("Could not reach highlights API");
+          } catch (err: any) {
+            setHighlightsError(err.response?.data?.message || err.response?.data?.error || "Could not reach highlights API");
           }
         }
 
         setLoggedInUserId(data.user._id);
         setLoading(false);
-      } catch {
-        setError("Network error");
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Network error");
         setLoading(false);
       }
     };

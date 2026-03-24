@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Trophy, MapPin, CalendarDays, Upload, Trash2, Plus, Minus } from "lucide-react";
 import "react-day-picker/style.css";
 import Link from "next/link";
+import api from '@/lib/api';
 
 
 // Lawyer interface for frontend
@@ -47,13 +48,7 @@ export default function EditLawyerProfile({
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/profile", { credentials: "include" });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Failed to load profile");
-          setLoading(false);
-          return;
-        }
+        const { data } = await api.get('/profile');
 
         const p = data.profile;
 
@@ -67,9 +62,9 @@ export default function EditLawyerProfile({
         setProfilePicture(p?.profilepicture || "/images/ProfilepicPlaceholder.png");
 
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Network error loading profile", err);
-        setError("Network error loading profile");
+        setError(err.response?.data?.error || "Network error loading profile");
         setLoading(false);
       }
     };
@@ -84,32 +79,21 @@ export default function EditLawyerProfile({
       .map(s => s.trim())
       .filter(Boolean); // remove empty strings
 
-      const res = await fetch("http://localhost:4000/api/profile", {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userName,
-          barNumber,
-          state,
-          firmName,
-          specializations: specsArray,
-          yearsOfExperience,
-          bio,
-          profilepicture
-        }),
+      await api.put('/profile', {
+        userName,
+        barNumber,
+        state,
+        firmName,
+        specializations: specsArray,
+        yearsOfExperience,
+        bio,
+        profilepicture,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to update profile");
-        return;
-      }
 
       alert("Profile updated successfully");
       router.push("/lawyerprofile");
-    } catch (err) {
-      alert("Network error saving profile");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Network error saving profile");
     }
   };
 

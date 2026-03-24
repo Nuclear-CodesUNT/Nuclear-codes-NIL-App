@@ -12,7 +12,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchCompletedVideos, setVideoCompleted } from "@/lib/api";
+import api, { fetchCompletedVideos, setVideoCompleted } from "@/lib/api";
 import Image from "next/image";
 import {
   GraduationCap,
@@ -280,15 +280,10 @@ export default function Page() {
 
   const playingVideoIdsRef = useRef<Set<string>>(new Set());
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-
   const fetchVideos = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/videos`, { credentials: "include" });
-      if (!res.ok) throw new Error(`Failed to fetch videos (${res.status})`);
-
-      const data = await res.json();
+      const { data } = await api.get('/videos');
       const incoming = (data.videos || []) as Video[];
 
       setVideos((previous) => {
@@ -302,7 +297,7 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE]);
+  }, []);
 
   const markVideoPlaying = useCallback((videoId: string) => {
     playingVideoIdsRef.current.add(videoId);

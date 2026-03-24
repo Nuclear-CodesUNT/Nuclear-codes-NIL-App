@@ -6,6 +6,7 @@ import { Card } from './ui/card';
 import { Avatar } from './ui/avatar';
 //import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Badge } from './ui/badge';
+import api from '@/lib/api';
 
 interface FeedCardProps {
   athleteName: string;
@@ -29,8 +30,6 @@ type Highlight = {
   addedAt?: string;
 };
 
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
 export default function FeedCard({
   athleteName,
   sport,
@@ -53,10 +52,7 @@ export default function FeedCard({
       if (!athleteId) return;
 
       try {
-        const res = await fetch(`${API_ORIGIN}/api/athletes/${athleteId}/highlights`);
-        const data = await res.json();
-        if (!res.ok) return;
-
+        const { data } = await api.get(`/athletes/${athleteId}/highlights`);
         const list: Highlight[] = Array.isArray(data?.highlights) ? data.highlights : [];
         setHighlights(list);
         if (list.length > 0) {
