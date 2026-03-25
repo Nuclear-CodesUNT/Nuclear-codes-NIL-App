@@ -4,51 +4,63 @@ import MessagesOverview from '../../components/dashboard-messages';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-//import Image from 'next/image';
-//import Link from 'next/link';
-
-const feedData = [
-  {
-    id: '1',
-    athleteName: 'Alex Rivera',
-    sport: 'Soccer',
-    school: 'Stanford',
-    postType: 'video' as const,
-    mediaUrl: 'https://images.unsplash.com/photo-1551280857-2b9bbe52acf4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2NjZXIlMjBwbGF5ZXIlMjBmaWVsZHxlbnwxfHx8fDE3NjEyMTY3NjJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    caption: 'Game-winning goal in overtime! What a match ⚽️',
-    likes: 2156,
-    comments: 143,
-    timeAgo: '8h ago'
-  }
-];
 
 export default function Dashboard() {
   const [athleteId, setAthleteId] = useState<string | null>(null);
+  const [feedPosts, setFeedPosts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       try {
-        const { data } = await api.get('/profile');
-        const id = data?.profile?._id;
+        const profileRes = await api.get('/profile');
+        const id = profileRes.data?.profile?._id;
         if (typeof id === "string" && id) setAthleteId(id);
-      } catch {
-        // ignore
+
+        const videoRes = await api.get('/videos'); 
+        
+        if (videoRes.data?.success) {
+          const formattedPosts = videoRes.data.videos.map((video: any) => ({
+            id: video._id,
+            athleteName: video.athleteName || 'Unknown Athlete', 
+            sport: video.sport || 'General',
+            school: video.school || 'Unknown School',
+            postType: 'video' as const,
+            mediaUrl: video.videoUrl, 
+            caption: video.description || video.title || '',
+            likes: video.likes || 0,
+            comments: video.comments || 0,
+            timeAgo: 'Just now' 
+          }));
+          
+          setFeedPosts(formattedPosts);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadProfile();
+    loadData();
   }, []);
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="flex gap-6 p-6 max-w-\[1600px\] mx-auto">
+      <div className="flex gap-6 p-6 max-w-[1600px] mx-auto">
         {/* Main Feed - Left Side */}
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-4 max-w-\[700px\] mx-auto">
-              {feedData.map((post) => (
-                <FeedCard key={post.id} {...post} athleteId={athleteId || undefined} />
-              ))}
+            <div className="space-y-4 pr-4 max-w-[700px] mx-auto">
+              {isLoading ? (
+                <p className="text-center text-gray-500">Loading feed...</p>
+              ) : feedPosts.length > 0 ? (
+                feedPosts.map((post) => (
+                  <FeedCard key={post.id} {...post} athleteId={athleteId || undefined} />
+                ))
+              ) : (
+                <p className="text-center text-gray-500">No posts available yet.</p>
+              )}
             </div>
           </ScrollArea>
         </div>
