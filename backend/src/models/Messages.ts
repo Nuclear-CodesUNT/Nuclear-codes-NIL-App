@@ -10,7 +10,7 @@ const MessagesSchema = new Schema(
         message: { type: String, required: true },
         time: { type: Date, default: Date.now },
         senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        receiverId: { type: Schema.Types.ObjectId, ref: "Receiver", required: true, index: true },
+        receiverId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
         account_type: {
             type: String, enum: ["athlete", "coach", "lawyer"],
             required: true
@@ -18,7 +18,6 @@ const MessagesSchema = new Schema(
     },
 );
 
-// One progress doc per (user, video)
-MessagesSchema.index({ userId: 1, videoId: 1 }, { unique: true });
+MessagesSchema.index({ conversationId: 1, time: -1 });
 
 export default mongoose.model("Messages", MessagesSchema);
