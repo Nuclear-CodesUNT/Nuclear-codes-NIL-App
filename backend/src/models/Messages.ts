@@ -7,7 +7,7 @@ const MessagesSchema = new Schema(
             ref: "Conversation",
             required: true
         },
-        message: { String, required: true },
+        message: { type: String, required: true },
         time: { type: Date, default: Date.now },
         senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         receiverId: { type: Schema.Types.ObjectId, ref: "Receiver", required: true, index: true },
