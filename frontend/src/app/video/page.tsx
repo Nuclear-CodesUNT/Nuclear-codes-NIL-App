@@ -13,16 +13,15 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api, { fetchCompletedVideos, setVideoCompleted } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import {
   GraduationCap,
   PlayCircle,
   BookOpen,
-  LayoutGrid,
-  Users,
-  ShieldCheck,
-  FileText,
   ChevronDown,
+  UploadCloud,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -34,6 +33,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 
 /* ----------------------------- Types ----------------------------- */
@@ -80,6 +87,35 @@ type CourseModule = {
   progressPercent: number;
   statusLabel: "In Progress" | "Not Started" | "Completed";
 };
+
+function isLawyerRole(role: string | null | undefined) {
+  return (role || "").toLowerCase() === "lawyer";
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) return err.message;
+
+  const maybe = err as {
+    message?: unknown;
+    response?: {
+      data?: {
+        message?: unknown;
+        error?: unknown;
+      };
+    };
+  };
+
+  const responseMessage = maybe?.response?.data?.message;
+  if (typeof responseMessage === "string" && responseMessage.trim()) return responseMessage;
+
+  const responseError = maybe?.response?.data?.error;
+  if (typeof responseError === "string" && responseError.trim()) return responseError;
+
+  const plainMessage = maybe?.message;
+  if (typeof plainMessage === "string" && plainMessage.trim()) return plainMessage;
+
+  return fallback;
+}
 
 /* ----------------------------- Backend-compat helpers ----------------------------- */
 
@@ -167,11 +203,6 @@ function normalizeStatus(status?: string) {
   return { label: "Draft", variant: "outline" as const };
 }
 
-function isCompletedStatus(status?: string) {
-  const raw = (status || "draft").toLowerCase();
-  return raw === "completed" || raw === "published";
-}
-
 function buildModulesWithLocalCompletion(videos: Video[], completedVideoIds: string[]): CourseModule[] {
   if (videos.length === 0) return [];
 
@@ -212,17 +243,27 @@ function SidebarItem({
   icon,
   label,
   active,
+  onClick,
+  disabled,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      disabled={disabled}
       className={[
         "mb-2 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition",
-        active ? "bg-teal-500 text-white" : "text-slate-200 hover:bg-slate-800",
+        disabled
+          ? "cursor-not-allowed text-slate-500"
+          : active
+            ? "bg-teal-500 text-white"
+            : "text-slate-200 hover:bg-slate-800",
       ].join(" ")}
     >
       <span className="inline-flex h-5 w-5 items-center justify-center">{icon}</span>
@@ -231,9 +272,13 @@ function SidebarItem({
   );
 }
 
-function Sidebar() {
+function Sidebar({
+  onOpenUpload,
+}: {
+  onOpenUpload: () => void;
+}) {
   return (
-    <aside className="hidden w-72 shrink-0 flex-col bg-slate-900 text-white lg:flex">
+    <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 flex-col bg-slate-900 text-white lg:flex">
       <div className="px-6 py-6">
         <div className="text-sm font-semibold text-slate-200">NIL Athlete Law</div>
         <div className="mt-1 text-xs text-slate-400">@jdavis_athlete</div>
@@ -241,10 +286,11 @@ function Sidebar() {
 
       <nav className="px-3">
         <SidebarItem active icon={<BookOpen className="h-5 w-5" />} label="Financial Literacy" />
-        <SidebarItem icon={<LayoutGrid className="h-5 w-5" />} label="Dashboard" />
-        <SidebarItem icon={<Users className="h-5 w-5" />} label="Players" />
-        <SidebarItem icon={<ShieldCheck className="h-5 w-5" />} label="Coaches" />
-        <SidebarItem icon={<FileText className="h-5 w-5" />} label="Contracts" />
+        <SidebarItem
+          icon={<UploadCloud className="h-5 w-5" />}
+          label="Upload Videos"
+          onClick={onOpenUpload}
+        />
       </nav>
 
       <div className="mt-auto px-6 py-6 text-xs text-slate-400">© NIL Athlete Law</div>
@@ -269,6 +315,9 @@ function ModuleStatusPill({ status }: { status: CourseModule["statusLabel"] }) {
 /* ----------------------------- Page ----------------------------- */
 
 export default function Page() {
+  const { user, loading: authLoading } = useAuth();
+  const canUpload = useMemo(() => !authLoading && isLawyerRole(user?.role), [authLoading, user?.role]);
+
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -277,6 +326,13 @@ export default function Page() {
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   const [completedVideoIds, setCompletedVideoIds] = useState<string[]>([]);
+
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedVideos, setUploadedVideos] = useState<Video[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const playingVideoIdsRef = useRef<Set<string>>(new Set());
 
@@ -299,6 +355,103 @@ export default function Page() {
     }
   }, []);
 
+  const openUpload = useCallback(() => {
+    setUploadError(canUpload ? null : "Only lawyer accounts can upload videos.");
+    setUploadOpen(true);
+  }, [canUpload]);
+
+  const closeUpload = useCallback(() => {
+    setUploadError(null);
+    setIsDragOver(false);
+    setUploadOpen(false);
+  }, []);
+
+  const uploadFiles = useCallback(
+    async (files: File[]) => {
+      if (!canUpload) {
+        setUploadError("Lawyers only.");
+        return;
+      }
+
+      const onlyVideos = files.filter((f) => f.type.startsWith("video/"));
+      if (onlyVideos.length === 0) {
+        setUploadError("Please choose a video file (MP4, MOV, or WEBM). ");
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadError(null);
+
+      try {
+        for (const file of onlyVideos) {
+          const formData = new FormData();
+          formData.append("file", file);
+          // Ensure videos show up immediately in the education library.
+          formData.append("status", "published");
+
+          const { data } = await api.post("/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+
+          const created = (data?.video || null) as Video | null;
+          if (created?._id) {
+            setUploadedVideos((prev) => [created, ...prev]);
+          }
+        }
+
+        await fetchVideos();
+      } catch (err: unknown) {
+        setUploadError(getErrorMessage(err, "Upload failed"));
+      } finally {
+        setIsUploading(false);
+        setIsDragOver(false);
+      }
+    },
+    [canUpload, fetchVideos]
+  );
+
+  const onPickFiles = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const onFileInputChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const list = e.target.files;
+      if (!list || list.length === 0) return;
+      const files = Array.from(list);
+      // Allow selecting the same file again.
+      e.target.value = "";
+      await uploadFiles(files);
+    },
+    [uploadFiles]
+  );
+
+  const onDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const list = e.dataTransfer.files;
+      if (!list || list.length === 0) return;
+      await uploadFiles(Array.from(list));
+    },
+    [uploadFiles]
+  );
+
+  const deleteUploaded = useCallback(
+    async (videoId: string) => {
+      if (!canUpload) return;
+      try {
+        await api.delete(`/videos/${videoId}`);
+        setUploadedVideos((prev) => prev.filter((v) => v._id !== videoId));
+        await fetchVideos();
+      } catch (err: unknown) {
+        setUploadError(getErrorMessage(err, "Delete failed"));
+      }
+    },
+    [canUpload, fetchVideos]
+  );
+
   const markVideoPlaying = useCallback((videoId: string) => {
     playingVideoIdsRef.current.add(videoId);
     setIsAnyVideoPlaying(true);
@@ -314,7 +467,7 @@ export default function Page() {
       try {
         await setVideoCompleted(videoId);
         setCompletedVideoIds((ids) => (ids.includes(videoId) ? ids : [...ids, videoId]));
-      } catch (err) {
+      } catch {
         // Optionally show error to user
       }
       markVideoNotPlaying(videoId);
@@ -365,8 +518,8 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="flex min-h-screen">
-        <Sidebar />
+      <div className="flex min-h-screen items-start">
+        <Sidebar onOpenUpload={openUpload} />
 
         <main className="flex-1">
           <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
@@ -545,6 +698,120 @@ export default function Page() {
           </div>
         </main>
       </div>
+
+      <Dialog open={uploadOpen} onOpenChange={(open: boolean) => (open ? openUpload() : closeUpload())}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Upload Videos</DialogTitle>
+            <DialogDescription>
+              {canUpload
+                ? "Upload educational videos to the NIL Education Center."
+                : "Only lawyer accounts can upload videos."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {uploadError ? (
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardContent className="pt-6 text-sm text-destructive">{uploadError}</CardContent>
+            </Card>
+          ) : null}
+
+          {canUpload ? (
+            <>
+              <div className="text-sm font-medium text-gray-900">Upload video files</div>
+              <div className="text-sm text-muted-foreground">
+                Videos are stored under the education library. New uploads appear in the video list once complete.
+              </div>
+
+              <div
+                className={[
+                  "mt-2 rounded-lg border-2 border-dashed p-10 text-center",
+                  isDragOver ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white",
+                ].join(" ")}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragOver(false);
+                }}
+                onDrop={onDrop}
+              >
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                  <UploadCloud className="h-6 w-6 text-gray-600" />
+                </div>
+                <div className="text-sm text-gray-700">Drag and drop your video files here, or</div>
+                <div className="mt-4">
+                  <Button type="button" onClick={onPickFiles} disabled={isUploading}>
+                    Choose files
+                  </Button>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">Supports: MP4, MOV, WEBM (Max 500MB per file)</div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  multiple
+                  className="hidden"
+                  onChange={onFileInputChange}
+                />
+              </div>
+
+              <div className="mt-6">
+                <div className="mb-3 text-sm font-semibold text-gray-900">Uploaded Videos</div>
+
+                {isUploading ? (
+                  <div className="text-sm text-muted-foreground">Uploading…</div>
+                ) : null}
+
+                {uploadedVideos.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No uploads yet.</div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {uploadedVideos.map((vid) => (
+                      <div key={vid._id} className="overflow-hidden rounded-lg border bg-white">
+                        <div className="relative h-28 w-full bg-gray-50">
+                          {vid.thumbnailUrl ? (
+                            <Image
+                              src={vid.thumbnailUrl}
+                              alt={vid.title}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                              No thumbnail
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-start justify-between gap-3 p-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-gray-900">{vid.title}</div>
+                            <div className="text-xs text-muted-foreground">Duration: {formatDuration(vid.durationSeconds)}</div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteUploaded(vid._id)}
+                            aria-label="Delete uploaded video"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
