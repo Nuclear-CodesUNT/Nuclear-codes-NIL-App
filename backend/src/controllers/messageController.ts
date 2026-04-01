@@ -190,3 +190,31 @@ export const getConversationMessages = async (req: Request, res: Response): Prom
         return res.status(500).json({ message: 'Failed to fetch messages' });
     }
 };
+
+/**
+ * GET /api/messages/users/search?q=name
+ * Searches for users by name to start a new conversation.
+ */
+export const searchUsers = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const { q } = req.query;
+        if (!q || typeof q !== 'string') {
+            return res.status(200).json({ users: [] });
+        }
+
+        const userId = req.session.userId;
+
+        // Search for users matching the query, excluding the person currently logged in
+        const users = await User.find({
+            name: { $regex: q, $options: 'i' },
+            ...(userId ? { _id: { $ne: new Types.ObjectId(userId) } } : {})
+        })
+        .select('name role')
+        .limit(10); // Keep it to the top 10 results
+
+        return res.status(200).json({ users });
+    } catch (error: unknown) {
+        console.error('Error searching users:', error);
+        return res.status(500).json({ message: 'Failed to search users' });
+    }
+};

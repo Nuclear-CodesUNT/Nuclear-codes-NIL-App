@@ -123,7 +123,12 @@ export default function MessagesPage() {
     const [selectedMessageId, setSelectedMessageId] = React.useState<string | null>(null);
     const [meId, setMeId] = React.useState<string | null>(null);
     const [typingByConversation, setTypingByConversation] = React.useState<Record<string, boolean>>({});
-
+    const [isSending, setIsSending] = React.useState<boolean>(false);
+    const [isSearchOpen, setIsSearchOpen] = React.useState<boolean>(false);
+    const [userSearchQuery, setUserSearchQuery] = React.useState<string>("");
+    const [userSearchResults, setUserSearchResults] = React.useState<any[]>([]);
+    
+    const messagesEndRef = React.useRef<HTMLDivElement>(null);
     const typingTimeoutRef = React.useRef<number | null>(null);
     const joinedConversationRef = React.useRef<string | null>(null);
 
@@ -353,6 +358,11 @@ export default function MessagesPage() {
         }
     }, [conversations, selectedConversationId]);
 
+    // Auto-scroll to the bottom when a new message is added
+    React.useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [selectedConversation?.messages]);
+
     const pinned = React.useMemo(
         () => conversations.filter((c) => c.pinned),
         [conversations],
@@ -397,138 +407,105 @@ export default function MessagesPage() {
         setEmojiOpen(false);
     }
 
-    function sendMessage() {
-        const text = composer.trim();
-        if (!text) return;
+async function sendMessage() {
+    const text = composer.trim();
+    if (!text || isSending) return;
 
-        const convId = selectedConversationId;
-        const peerId = selectedConversation?.peer?.id;
-        if (!convId || !/^[a-f\d]{24}$/i.test(convId)) return;
-        if (!peerId || !/^[a-f\d]{24}$/i.test(peerId)) return;
+    const convId = selectedConversationId;
+    const peerId = selectedConversation?.peer?.id;
+    const isNewChat = convId?.startsWith("new_");
 
-        const socket = getSocket();
-        const useSocket = socket.connected;
+    // Let temporary chats pass, but enforce real hex IDs for existing ones
+    if (!convId || (!isNewChat && !/^[a-f\d]{24}$/i.test(convId))) return;
+    if (!peerId || !/^[a-f\d]{24}$/i.test(peerId)) return;
 
-        // Emit typing off immediately
-        if (convId) {
-            socket.emit("typing", { conversationId: convId, isTyping: false });
-            setTypingByConversation((prev) => ({ ...prev, [convId]: false }));
-        }
+    setIsSending(true);
 
-        if (useSocket) {
-            socket.emit(
-                "send_message",
-                { conversationId: convId, receiverId: peerId, message: text },
-                async (ack?: { ok?: boolean; error?: string }) => {
-                    if (ack?.ok) return;
-                    // Fallback to REST if socket send fails
-                    try {
-                        const { data } = await api.post("/messages/new-message", {
-                            conversationId: convId,
-                            receiverId: peerId,
-                            message: text,
-                        });
+    const socket = getSocket();
+    const useSocket = socket.connected;
 
-                        const msg = data?.message as ApiMessage | undefined;
-                        if (!msg?.message || !msg?.time) return;
-                        const timeLabel = formatTimeLabel(msg.time);
+    if (convId && !isNewChat) {
+        socket.emit("typing", { conversationId: convId, isTyping: false });
+        setTypingByConversation((prev) => ({ ...prev, [convId]: false }));
+    }
 
-                        setConversations((prev) => {
-                            const next = prev.map((c) => {
-                                if (c.id !== convId) return c;
-                                const fromSelf = true;
-                                const m: Message = {
-                                    id: String(msg._id ?? msg.id ?? Date.now()),
-                                    fromSelf,
-                                    text: msg.message,
-                                    time: timeLabel,
-                                    senderInitials: "YO",
-                                };
-                                return {
-                                    ...c,
-                                    subtitle: msg.message.slice(0, 18),
-                                    time: timeLabel,
-                                    messages: [...(c.messages ?? []), m],
-                                };
-                            });
+    const handleRestSend = async () => {
+        try {
+            const { data } = await api.post("/messages/new-message", {
+                // If it's a new chat, don't send the fake ID. Let the backend generate a real one.
+                conversationId: isNewChat ? undefined : convId,
+                receiverId: peerId,
+                message: text,
+            });
 
-                            // Move updated conversation to the top of its pin-group
-                            const idx = next.findIndex((c) => c.id === convId);
-                            if (idx <= 0) return next;
+            const msg = data?.message as ApiMessage | undefined;
+            const realConvId = data?.conversationId || convId; // Capture the real DB ID
 
-                            const updated = next[idx];
-                            const rest = next.filter((c) => c.id !== convId);
+            if (!msg?.message || !msg?.time) return;
+            const timeLabel = formatTimeLabel(msg.time);
 
-                            if (updated.pinned) {
-                                const pinnedFirst = [updated, ...rest.filter((c) => c.pinned)];
-                                const unpinnedRest = rest.filter((c) => !c.pinned);
-                                return [...pinnedFirst, ...unpinnedRest];
-                            }
-
-                            const pinnedGroup = rest.filter((c) => c.pinned);
-                            const unpinnedGroup = rest.filter((c) => !c.pinned);
-                            return [...pinnedGroup, updated, ...unpinnedGroup];
-                        });
-                    } catch {
-                        // ignore
-                    }
-                },
-            );
-        } else {
-            api
-                .post("/messages/new-message", {
-                    conversationId: convId,
-                    receiverId: peerId,
-                    message: text,
-                })
-                .then(({ data }) => {
-                    const msg = data?.message as ApiMessage | undefined;
-                    if (!msg?.message || !msg?.time) return;
-                    const timeLabel = formatTimeLabel(msg.time);
-
-                    setConversations((prev) => {
-                        const next = prev.map((c) => {
-                            if (c.id !== convId) return c;
-                            const m: Message = {
-                                id: String(msg._id ?? msg.id ?? Date.now()),
-                                fromSelf: true,
-                                text: msg.message,
-                                time: timeLabel,
-                                senderInitials: "YO",
-                            };
-                            return {
-                                ...c,
-                                subtitle: msg.message.slice(0, 18),
-                                time: timeLabel,
-                                messages: [...(c.messages ?? []), m],
-                            };
-                        });
-
-                        const idx = next.findIndex((c) => c.id === convId);
-                        if (idx <= 0) return next;
-
-                        const updated = next[idx];
-                        const rest = next.filter((c) => c.id !== convId);
-
-                        if (updated.pinned) {
-                            const pinnedFirst = [updated, ...rest.filter((c) => c.pinned)];
-                            const unpinnedRest = rest.filter((c) => !c.pinned);
-                            return [...pinnedFirst, ...unpinnedRest];
-                        }
-
-                        const pinnedGroup = rest.filter((c) => c.pinned);
-                        const unpinnedGroup = rest.filter((c) => !c.pinned);
-                        return [...pinnedGroup, updated, ...unpinnedGroup];
-                    });
-                })
-                .catch(() => {
-                    // ignore
+            setConversations((prev) => {
+                const next = prev.map((c) => {
+                    if (c.id !== convId) return c;
+                    const m: Message = {
+                        id: String(msg._id ?? msg.id ?? Date.now()),
+                        fromSelf: true,
+                        text: msg.message,
+                        time: timeLabel,
+                        senderInitials: "YO",
+                    };
+                    return {
+                        ...c,
+                        id: realConvId, // Swap the temporary ID for the real one
+                        subtitle: msg.message.slice(0, 18),
+                        time: timeLabel,
+                        messages: [...(c.messages ?? []), m],
+                    };
                 });
-        }
 
+                const updated = next.find(c => c.id === realConvId);
+                if (!updated) return next;
+                const rest = next.filter(c => c.id !== realConvId);
+
+                return updated.pinned 
+                    ? [updated, ...rest.filter(c => c.pinned), ...rest.filter(c => !c.pinned)]
+                    : [...rest.filter(c => c.pinned), updated, ...rest.filter(c => !c.pinned)];
+            });
+
+            // Move the user's screen from the ghost chat to the real chat
+            if (isNewChat && realConvId) setSelectedConversationId(realConvId);
+
+        } catch (error) {
+            console.error("Failed to send message via REST API", error);
+        }
+    };
+
+    if (useSocket) {
+        socket.emit(
+            "send_message",
+            { conversationId: isNewChat ? undefined : convId, receiverId: peerId, message: text },
+            async (ack?: { ok?: boolean; error?: string; conversationId?: string }) => {
+                if (!ack?.ok) {
+                    await handleRestSend();
+                } else if (isNewChat && ack?.conversationId) {
+                    // Update the sidebar array with the real ID
+                    setConversations(prev => prev.map(c => c.id === convId ? { ...c, id: ack.conversationId as string } : c));
+                    // Point the screen at the real ID
+                    setSelectedConversationId(ack.conversationId);
+                }
+                
+                setComposer("");
+                setSelectedMessageId(null);
+                setIsSending(false);
+            }
+        );
+    } else {
+        await handleRestSend();
         setComposer("");
         setSelectedMessageId(null);
+        setIsSending(false);
     }
+}
 
     // Typing indicator: debounce typing events
     React.useEffect(() => {
@@ -559,6 +536,51 @@ export default function MessagesPage() {
             }
         };
     }, [composer, selectedConversation?.peer?.id, selectedConversationId]);
+
+    // Fetch users when typing in the new chat search bar
+    React.useEffect(() => {
+        if (!userSearchQuery.trim()) {
+            setUserSearchResults([]);
+            return;
+        }
+        const delay = setTimeout(async () => {
+            try {
+                const { data } = await api.get(`/messages/users/search?q=${userSearchQuery}`);
+                setUserSearchResults(data.users || []);
+            } catch (e) {
+                // ignore
+            }
+        }, 300); // Debounce to prevent spamming the database
+
+        return () => clearTimeout(delay);
+    }, [userSearchQuery]);
+
+    // Function to start a chat when a user is clicked
+    function startNewChat(user: { _id: string, name: string, role?: string }) {
+        // Check if we already have a conversation with this person
+        const existing = conversations.find(c => c.peer?.id === user._id);
+        if (existing) {
+            setSelectedConversationId(existing.id);
+        } else {
+            // Create a temporary conversation in the UI until the first message is sent
+            const newId = `new_${user._id}`;
+            const newConv: Conversation = {
+                id: newId,
+                displayName: user.name,
+                subtitle: "Start a new conversation...",
+                time: "Now",
+                pinned: false,
+                kind: user.role === 'coach' ? 'coach' : 'player',
+                avatarInitials: initialsFromName(user.name),
+                messages: [],
+                peer: { id: user._id, name: user.name, role: user.role }
+            };
+            setConversations([newConv, ...conversations]);
+            setSelectedConversationId(newId);
+        }
+        setIsSearchOpen(false);
+        setUserSearchQuery("");
+    }
 
     function ConversationRow({ conversation }: { conversation: Conversation }) {
         const active = conversation.id === selectedConversationId;
@@ -626,13 +648,51 @@ export default function MessagesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="mx-auto flex min-h-screen max-w-350">
+        <div className="h-[calc(100vh-96px)] bg-white overflow-hidden">
+            <div className="mx-auto flex h-full max-w-[1400px]">
                 {/* Left: conversations */}
-                <aside className="w-90 border-r border-gray-200">
-                    <div className="px-6 pt-6">
+                <aside className="w-90 border-r border-gray-200 flex flex-col">
+                    <div className="flex items-center justify-between px-6 pt-6">
                         <h1 className="text-lg font-medium text-gray-900">Messages</h1>
+                        <button 
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700 focus:outline-none"
+                        >
+                            {isSearchOpen ? "Cancel" : "+ New Chat"}
+                        </button>
                     </div>
+
+{/* New Chat Search Dropdown */}
+{isSearchOpen && (
+    <div className="px-6 pt-4">
+        <input
+            autoFocus
+            value={userSearchQuery}
+            onChange={(e) => setUserSearchQuery(e.target.value)}
+            placeholder="Type a name to find users..."
+            className="h-10 w-full rounded-xl border border-blue-400 bg-blue-50 pl-3 pr-3 text-sm text-gray-900 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+        />
+        {userSearchResults.length > 0 && (
+            <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+                {userSearchResults.map((u) => (
+                    <button
+                        key={u._id}
+                        onClick={() => startNewChat(u)}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 outline-none"
+                    >
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-700">
+                            {initialsFromName(u.name)}
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-gray-900">{u.name}</p>
+                            <p className="text-xs text-gray-500 capitalize">{u.role}</p>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        )}
+    </div>
+)}
 
                     <div className="px-6 pt-4">
                         <div className="relative">
@@ -706,7 +766,7 @@ export default function MessagesPage() {
                         </div>
                     </div>
 
-                    <ScrollArea className="h-[calc(100vh-172px)] px-3 pb-6 pt-4">
+                    <ScrollArea className="flex-1 px-3 pb-6 pt-4">
                         {visibleConversations.pinned.length > 0 ? (
                             <div className="px-3">
                                 <p className="mb-2 text-xs font-semibold tracking-wide text-gray-400">PINNED</p>
@@ -732,7 +792,7 @@ export default function MessagesPage() {
                 </aside>
 
                 {/* Right: chat */}
-                <main className="flex flex-1 flex-col">
+                <main className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
                     <header className="flex items-center gap-4 border-b border-gray-200 px-6 py-4">
                         <button
                             type="button"
@@ -765,7 +825,7 @@ export default function MessagesPage() {
                         </div>
                     </header>
 
-                    <ScrollArea className="flex-1 px-6 py-6">
+                    <ScrollArea className="flex-1 min-h-0 px-6 py-6">
                         <div className="space-y-6">
                             {(selectedConversation?.messages ?? []).map((m) => (
                                 <div
@@ -809,6 +869,7 @@ export default function MessagesPage() {
                                     ) : null}
                                 </div>
                             ))}
+                            <div ref={messagesEndRef} />
                         </div>
                     </ScrollArea>
 
@@ -868,7 +929,13 @@ export default function MessagesPage() {
                                 type="button"
                                 aria-label="Send"
                                 onClick={sendMessage}
-                                className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white hover:bg-blue-700"
+                                disabled={isSending || !composer.trim()}
+                                className={cx(
+                                    "inline-flex h-12 w-12 items-center justify-center rounded-2xl transition-colors",
+                                    isSending || !composer.trim()
+                                        ? "bg-gray-200 text-gray-400 cursor-not-allowed" // Grayed out state
+                                        : "bg-blue-600 text-white hover:bg-blue-700"     // Active state
+                                )}
                             >
                                 <Send className="h-5 w-5" />
                             </button>

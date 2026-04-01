@@ -70,6 +70,9 @@ export default function NavBar() {
               <Link href="/contracts" className={navLinkClass("/contracts")}>
                 <span>Contracts</span>
               </Link>
+              <Link href="/messages" className={navLinkClass("/messages")}>
+                <span>Messages</span>
+              </Link>
             </>
           )}
         </div>
