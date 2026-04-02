@@ -17,24 +17,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Verify session with backend (prevents stale/invalid cookies from accessing /messages)
-  const base = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
-  try {
-    const res = await fetch(`${base}/api/auth/me`, {
-      headers: {
-        cookie: cookieHeader,
-      },
-      cache: "no-store",
-    });
-
-    if (res.ok) return NextResponse.next();
-  } catch {
-    // Fall through to redirect
-  }
-
-  const url = request.nextUrl.clone();
-  url.pathname = "/login";
-  return NextResponse.redirect(url);
+  // Cookie present — let the page load.
+  // Client-side AuthContext validates the session and handles stale cookies.
+  return NextResponse.next();
 }
 
 export const config = {
