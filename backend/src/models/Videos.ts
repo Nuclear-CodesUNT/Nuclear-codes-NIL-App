@@ -7,6 +7,10 @@ export interface IVideo extends Document {
   videoUrl: string;
   s3Key: string;
 
+  athleteName?: string;
+  sport?: string;
+  school?: string;
+
   thumbnailUrl?: string;
   thumbnailKey?: string;
 
@@ -24,6 +28,10 @@ const VideosSchema = new Schema<IVideo>(
 
     videoUrl: { type: String, required: true },
     s3Key: { type: String, required: true },
+
+    athleteName: { type: String, default: "Unknown Athlete" },
+    sport: { type: String, default: "General" },
+    school: { type: String, default: "Unknown School" },
 
     thumbnailUrl: { type: String, default: "" },
     thumbnailKey: { type: String, default: "" },

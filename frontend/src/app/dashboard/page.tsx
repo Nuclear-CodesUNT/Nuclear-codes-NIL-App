@@ -12,11 +12,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
+      // 1. Try to load the profile independently
       try {
         const profileRes = await api.get('/profile');
         const id = profileRes.data?.profile?._id;
         if (typeof id === "string" && id) setAthleteId(id);
+      } catch (error) {
+        console.log("Could not load profile, continuing to feed...");
+      }
 
+      // 2. Fetch the videos securely
+      try {
         const videoRes = await api.get('/videos'); 
         
         if (videoRes.data?.success) {
@@ -36,7 +42,7 @@ export default function Dashboard() {
           setFeedPosts(formattedPosts);
         }
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+        console.error("Failed to load feed data:", error);
       } finally {
         setIsLoading(false);
       }
