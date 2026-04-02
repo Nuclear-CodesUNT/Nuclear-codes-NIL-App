@@ -100,10 +100,10 @@ export default function FeedCard({
           alt={caption}
           className="w-full h-full object-cover"
         />**/}
-        {postType === "video" && activeVideoUrl ? (
+        {postType === "video" && (activeVideoUrl || mediaUrl) ? (
           <video
-            key={activeHighlightId}
-            src={activeVideoUrl}
+            key={activeHighlightId || mediaUrl}
+            src={activeVideoUrl || mediaUrl}
             controls
             className="w-full h-full object-cover"
           />
