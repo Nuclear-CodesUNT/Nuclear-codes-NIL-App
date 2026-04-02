@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useAuth } from "@/contexts/AuthContext";
 import { Upload, FileText, X, CheckCircle, Clock, AlertCircle, PenTool } from 'lucide-react'; // Added PenTool icon
 import api from '@/lib/api';
 // 1. IMPORT YOUR DOCUSIGN COMPONENT
@@ -21,7 +22,8 @@ export default function ContractUploadForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  
+  const { user } = useAuth();
+  const currentLawyerId = user?.id;
   // State for the side table
   const [submittedFiles, setSubmittedFiles] = useState<SubmittedFile[]>([]);
 
@@ -82,6 +84,7 @@ export default function ContractUploadForm() {
     
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('lawyer', currentLawyerId || '');;
 
     try {
       // Fake backend call for demo purposes if API fails or is not set up
