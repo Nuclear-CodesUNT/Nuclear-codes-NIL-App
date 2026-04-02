@@ -2,13 +2,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navLinkClass = (path: string) => {
@@ -43,14 +43,27 @@ export default function NavBar() {
           <Link href="/about" className={navLinkClass("/about")}>
             <span>About</span>
           </Link>
-{user && (
+          {user && user.role && (
             <>
-              <Link href="/profile" className={navLinkClass("/profile")}>
+              <Link // Different links for different profile types
+                href={
+                  user?.role === "athlete"
+                    ? "/profile"
+                    : user?.role === "coach"
+                    ? "/coachprofile"
+                    : user?.role === "lawyer"
+                    ? "/lawyerprofile"
+                    : "/"
+                }
+                className={navLinkClass("/profile")}
+              >
                 <span>Profile</span>
               </Link>
-              <Link href="/admin-portal" className={navLinkClass("/admin-portal")}>
-                <span>Admin Portal</span>
-              </Link>
+              {(user.role === 'admin' || user.role === 'lawyer') && (
+                <Link href="/admin-portal" className={navLinkClass("/admin-portal")}>
+                  <span>Admin Portal</span>
+                </Link>
+              )}
               <Link href="/dashboard" className={navLinkClass("/dashboard")}>
                 <span>Dashboard</span>
               </Link>
@@ -70,7 +83,7 @@ export default function NavBar() {
           >
             {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
-        ) : (
+        ) : !loading ? (
           <>
             <Link
               href="/signup"
@@ -85,7 +98,7 @@ export default function NavBar() {
               Sign In
             </Link>
           </>
-        )}
+        ) : null}
       </div>
     </nav>
   );

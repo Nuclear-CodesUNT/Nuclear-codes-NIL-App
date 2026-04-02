@@ -1,9 +1,14 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
 import Image from 'next/image';
+
+declare global {
+  interface Window { google: any }
+}
+
 
 export default function Login() {
   const router = useRouter();
@@ -11,6 +16,68 @@ export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+
+  useEffect(() => {
+    const initGoogle = () => {
+      window.google.accounts.id.initialize({
+      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+      callback: handleCredentialResponse,
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById("google-btn"),
+      { theme: "outline", size: "Large" }
+    );
+  };
+
+    if (window.google) {
+      initGoogle();
+    } else{
+      //script hasn't loaded yet
+      const interval = setInterval(() => {
+        if (window.google) {
+          clearInterval(interval);
+          initGoogle();
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  const handleCredentialResponse = async (response: { credential: string}) => {
+    // response.credential is a JWT from google
+    setError("");
+    setLoading(true);
+    try{
+      const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000"}/api/auth/google`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token: response.credential }),
+        }
+      );
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || "Google login failed");
+    login(data); //same as normal login respo
+    
+    if (data.isNewUser){
+      router.push("/complete-profile"); //finish reg page
+    } else {
+      router.push("/dashboard"); 
+    }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occured");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,6 +110,9 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+
+
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
@@ -104,6 +174,10 @@ export default function Login() {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+            <>
+            <script src="https://accounts.google.com/gsi/client" async></script>
+            <div id="google-btn" />
+            </>
           </form>
           <div>
             <p className="pt-6 flex justify-center text-black">

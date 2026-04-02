@@ -1,7 +1,10 @@
 import { Router } from 'express';
-import { getAllContracts, getMyContracts, updateContractStatus } from '../controllers/contractController.js';
+import { getAllContracts, getMyContracts, updateContractStatus, submitContract } from '../controllers/contractController.js';
 
 const router = Router();
+
+// Submit a new contract
+router.post('/', submitContract);
 
 // Get all contracts (for admin portal)
 router.get('/', getAllContracts);
