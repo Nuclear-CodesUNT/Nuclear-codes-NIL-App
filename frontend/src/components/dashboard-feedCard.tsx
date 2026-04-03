@@ -1,12 +1,14 @@
 "use client";
 
 import { Heart, MessageCircle, Share2, Play } from 'lucide-react';
+import { useState } from 'react';
 import { Card } from './ui/card';
 import { Avatar } from './ui/avatar';
-//import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Badge } from './ui/badge';
+import api from '@/lib/api';
 
 interface FeedCardProps {
+  id: string;
   athleteName: string;
   sport: string;
   school: string;
@@ -14,6 +16,7 @@ interface FeedCardProps {
   mediaUrl: string;
   caption: string;
   likes: number;
+  isLiked?: boolean;
   comments: number;
   timeAgo: string;
   avatarUrl?: string;
@@ -21,6 +24,7 @@ interface FeedCardProps {
 }
 
 export default function FeedCard({
+  id,
   athleteName,
   sport,
   school,
@@ -28,13 +32,34 @@ export default function FeedCard({
   mediaUrl,
   caption,
   likes,
+  isLiked,
   comments,
   timeAgo,
   avatarUrl,
   athleteId,
 }: FeedCardProps) {
 
-  // 2. Removed useState, useEffect, and API fetch logic here
+  // Local state for the optimistic UI
+  const [liked, setLiked] = useState(isLiked || false);
+  const [likeCount, setLikeCount] = useState(likes || 0);
+
+  const handleLikeClick = async () => {
+    if (!athleteId) return; // Prevent liking if not logged in
+
+    // Optimistic UI toggle
+    setLiked(!liked);
+    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
+
+    try {
+      // Fire the request to the backend
+      await api.post(`/videos/${id}/like`, { userId: athleteId });
+    } catch (error) {
+      console.error("Failed to toggle like", error);
+      // Revert if the server fails
+      setLiked(liked);
+      setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+    }
+  };
 
   return (
     <Card className="bg-white border-gray-200 overflow-hidden shadow-sm">
@@ -93,9 +118,12 @@ export default function FeedCard({
         {/* Actions */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
-              <Heart className="h-5 w-5" />
-              <span>{likes}</span>
+            <button 
+              onClick={handleLikeClick}
+              className={`flex items-center gap-2 transition-colors ${liked ? 'text-red-500' : 'hover:text-[#00D9FF]'}`}
+            >
+              <Heart className="h-5 w-5" fill={liked ? 'currentColor' : 'none'} />
+              <span>{likeCount}</span>
             </button>
             <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
               <MessageCircle className="h-5 w-5" />
