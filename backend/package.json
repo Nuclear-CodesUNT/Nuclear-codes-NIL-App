@@ -5,7 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "nodemon --watch src --exec tsx src/server.ts",
-    "build": "tsc -p tsconfig.json && cp src/swagger.yaml dist/swagger.yaml",
+    "build": "tsc -p tsconfig.json && shx cp src/swagger.yaml dist/swagger.yaml",
     "start": "node ./dist/server.js"
   },
   "keywords": [],
@@ -48,6 +48,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
     "nodemon": "^3.1.14",
+    "shx": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

@@ -171,11 +171,13 @@ export default function EditAthleteProfile({
   }) {
     try {
       const { data } = await api.post('/athletes/me/highlights', args);
-      return { ok: true, status: 200, data };
+      return { res: { ok: true, status: 200}, data };
     } catch (err: any) {
-      return {
-        ok: false,
-        status: err.response?.status ?? 500,
+      return { 
+        res: {
+          ok: false,
+          status: err.response?.status ?? 500,
+        },
         data: err.response?.data ?? {},
       };
     }

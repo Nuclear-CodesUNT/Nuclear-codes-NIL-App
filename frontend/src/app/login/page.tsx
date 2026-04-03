@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
 import Image from 'next/image';
 
+
 declare global {
   interface Window { google: any }
 }
