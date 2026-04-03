@@ -37,29 +37,34 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      // 1. Try to load the profile independently
+      let currentUserId: string | null = null; // Track this outside the try blocks
+
       try {
         const profileRes = await api.get('/profile');
         const id = profileRes.data?.profile?._id;
-        if (typeof id === "string" && id) setAthleteId(id);
+        if (typeof id === "string" && id) {
+          currentUserId = id;
+          setAthleteId(id);
+        }
       } catch (error) {
         console.log("Could not load profile, continuing to feed...");
       }
 
-      // 2. Fetch the videos securely
       try {
         const videoRes = await api.get('/videos'); 
         
         if (videoRes.data?.success) {
           const formattedPosts = videoRes.data.videos.map((video: any) => ({
-            id: video._id,
+            id: video._id, // Passing the video ID to the component
             athleteName: video.athleteName || 'Unknown Athlete', 
             sport: video.sport || 'General',
             school: video.school || 'Unknown School',
             postType: 'video' as const,
             mediaUrl: video.videoUrl, 
             caption: video.description || video.title || '',
-            likes: video.likes || 0,
+            // Map the new like logic:
+            likes: video.likedBy ? video.likedBy.length : 0,
+            isLiked: video.likedBy && currentUserId ? video.likedBy.includes(currentUserId) : false,
             comments: video.comments || 0,
             timeAgo: formatTimeAgo(video.createdAt) 
           }));
