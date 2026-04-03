@@ -15,8 +15,8 @@ export interface ICoach extends Document {
 
 const CoachSchema = new Schema<ICoach>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  school: { type: String, required: true },
-  sport: { type: String, required: true },
+  school: { type: String, required: false },
+  sport: { type: String, required: false },
   role: { type: String },
   yearsOfExperience: { type: Number, min: 0 },
   certifications: [{ type: String }],
