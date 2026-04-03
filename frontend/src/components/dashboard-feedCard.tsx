@@ -1,12 +1,10 @@
 "use client";
 
 import { Heart, MessageCircle, Share2, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { Card } from './ui/card';
 import { Avatar } from './ui/avatar';
 //import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Badge } from './ui/badge';
-import api from '@/lib/api';
 
 interface FeedCardProps {
   athleteName: string;
@@ -22,14 +20,6 @@ interface FeedCardProps {
   athleteId?: string; // Athlete document _id (used for highlights fetch)
 }
 
-type Highlight = {
-  highlightId: string;
-  title?: string;
-  thumbnailUrl?: string;
-  videoUrl?: string;
-  addedAt?: string;
-};
-
 export default function FeedCard({
   athleteName,
   sport,
@@ -43,31 +33,8 @@ export default function FeedCard({
   avatarUrl,
   athleteId,
 }: FeedCardProps) {
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [activeHighlightId, setActiveHighlightId] = useState<string>("");
 
-  useEffect(() => {
-    const loadHighlights = async () => {
-      if (postType !== "video") return;
-      if (!athleteId) return;
-
-      try {
-        const { data } = await api.get(`/athletes/${athleteId}/highlights`);
-        const list: Highlight[] = Array.isArray(data?.highlights) ? data.highlights : [];
-        setHighlights(list);
-        if (list.length > 0) {
-          setActiveHighlightId((prev) => prev || String(list[0].highlightId));
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    loadHighlights();
-  }, [athleteId, postType]);
-
-  const activeHighlight = highlights.find((h) => String(h.highlightId) === String(activeHighlightId)) || null;
-  const activeVideoUrl = activeHighlight?.videoUrl || "";
+  // 2. Removed useState, useEffect, and API fetch logic here
 
   return (
     <Card className="bg-white border-gray-200 overflow-hidden shadow-sm">
@@ -100,10 +67,11 @@ export default function FeedCard({
           alt={caption}
           className="w-full h-full object-cover"
         />**/}
-        {postType === "video" && (activeVideoUrl || mediaUrl) ? (
+        
+        {/* 3. Simplified Video Player Logic */}
+        {postType === "video" && mediaUrl ? (
           <video
-            key={activeHighlightId || mediaUrl}
-            src={activeVideoUrl || mediaUrl}
+            src={mediaUrl}
             controls
             className="w-full h-full object-cover"
           />
@@ -116,31 +84,7 @@ export default function FeedCard({
         ) : null}
       </div>
 
-      {/* Highlights (below large video section) */}
-      {postType === "video" && highlights.length > 0 && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600 mb-2">Highlights</div>
-          <div className="flex gap-3 overflow-x-auto">
-            {highlights.map((h) => (
-              <button
-                key={h.highlightId}
-                type="button"
-                onClick={() => setActiveHighlightId(String(h.highlightId))}
-                className={`shrink-0 w-32 border rounded overflow-hidden text-left ${String(h.highlightId) === String(activeHighlightId) ? "border-black" : "border-gray-200"
-                  }`}
-                aria-label={h.title || "Highlight"}
-              >
-                <img
-                  src={h.thumbnailUrl || "/images/court.png"}
-                  alt={h.title || "Highlight"}
-                  className="w-full h-20 object-cover"
-                />
-                <div className="p-2 text-xs text-gray-700 truncate">{h.title || "Untitled"}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 4. Completely removed the entire Highlights mapped UI block */}
 
       {/* Content */}
       <div className="p-4">
