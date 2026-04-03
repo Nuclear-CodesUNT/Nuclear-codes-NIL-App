@@ -7,6 +7,7 @@ import Image from 'next/image';
 
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window { google: any }
 }
 

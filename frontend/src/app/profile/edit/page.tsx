@@ -217,7 +217,9 @@ export default function EditAthleteProfile({
           return;
         }
         vid = String(upData.video._id);
-      } catch (err: any) {
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any 
+      catch (err: any) {
         alert(err.response?.data?.error || err.response?.data?.message || "Upload failed");
         return;
       }
