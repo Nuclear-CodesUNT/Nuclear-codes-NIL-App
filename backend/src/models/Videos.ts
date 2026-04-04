@@ -11,6 +11,8 @@ export interface IVideo extends Document {
   sport?: string;
   school?: string;
 
+  likedBy: string[];
+
   thumbnailUrl?: string;
   thumbnailKey?: string;
 
@@ -32,6 +34,8 @@ const VideosSchema = new Schema<IVideo>(
     athleteName: { type: String, default: "Unknown Athlete" },
     sport: { type: String, default: "General" },
     school: { type: String, default: "Unknown School" },
+
+    likedBy: { type: [String], default: [] },
 
     thumbnailUrl: { type: String, default: "" },
     thumbnailKey: { type: String, default: "" },

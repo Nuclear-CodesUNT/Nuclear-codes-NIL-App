@@ -39,9 +39,6 @@ const createRoleProfile = async (userId: any, role: string, roleSpecificData: Ro
   switch (role) {
     case 'athlete': {
       const { school, currentYear, sport, position } = roleSpecificData;
-      if (!school || !currentYear || !sport || !position) {
-        throw new Error('MISSING_ATHLETE_FIELDS');
-      }
       const profile = new Athlete({ userId, school, currentYear, sport, position });
       await profile.save();
       return profile;
@@ -49,9 +46,6 @@ const createRoleProfile = async (userId: any, role: string, roleSpecificData: Ro
 
     case 'lawyer': {
       const { barNumber, state, firmName, specializations, yearsOfExperience } = roleSpecificData;
-      if (!barNumber || !state || yearsOfExperience === undefined) {
-        throw new Error('MISSING_LAWYER_FIELDS');
-      }
       const profile = new Lawyer({
         userId,
         barNumber,
@@ -65,11 +59,7 @@ const createRoleProfile = async (userId: any, role: string, roleSpecificData: Ro
     }
 
     case 'coach': {
-      const { school: coachSchool, sport: coachSport } = roleSpecificData;
-      if (!coachSchool || !coachSport) {
-        throw new Error('MISSING_COACH_FIELDS');
-      }
-      const profile = new Coach({ userId, school: coachSchool, sport: coachSport });
+      const profile = new Coach({ userId });
       await profile.save();
       return profile;
     }
@@ -105,17 +95,17 @@ export const registerUser = async (userData: UserData) => {
     const allFieldsPresent = (() => {
       switch (role.toLowerCase()) {
         case 'athlete':
-          return roleSpecificData.school && roleSpecificData.currentYear && roleSpecificData.sport && roleSpecificData.position;
+          return true;
         case 'coach':
-          return roleSpecificData.school && roleSpecificData.sport;
+          return true;
         case 'lawyer':
-          return roleSpecificData.barNumber && roleSpecificData.state && roleSpecificData.yearsOfExperience !== undefined;
+          return true;
         default:
           return false;
       }
     })();
 
-    if (allFieldsPresent) {
+    if (true) {
       try {
         await createRoleProfile(newUser._id, role.toLowerCase(), roleSpecificData as RoleSpecificData);
       } catch (error) {
@@ -146,6 +136,11 @@ export const authenticateUser = async (email: string, password?: string) => {
     if (!isValidPassword) {
         throw new Error('INVALID_CREDENTIALS');
     }
+
+    if (user.banned) {
+    throw new Error(`USER_BANNED: ${user.bannedReason || 'No reason provided'}`);
+    }
+
 
     return user;
 };

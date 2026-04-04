@@ -7,6 +7,8 @@ export interface IUser extends Document {
   password?: string;
   googleId?: string;
   role: 'athlete' | 'lawyer' | 'coach' | 'admin';
+  banned? : boolean;
+  bannedReason? : string;
   resetToken?: string;
   resetTokenExpiry?: Date;
 }
@@ -23,7 +25,9 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
   },
   resetToken: { type: String, required: false },
-  resetTokenExpiry: { type: Date, required: false }
+  resetTokenExpiry: { type: Date, required: false },
+  banned: { type: Boolean, default: false },
+  bannedReason: { type: String },
 }, {
   timestamps: true //makes created at and updatedAt fields automatically
 });
