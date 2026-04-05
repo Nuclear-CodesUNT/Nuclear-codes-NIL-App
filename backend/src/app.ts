@@ -65,8 +65,6 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/athletes", athletesRouter);
 app.use("/api/progress", progressRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/api/contracts", contractsRouter);
-app.use("/api/upload", uploadRouter);
 app.use('/api/messages', messagesRouter);
 
 export default app;

@@ -1,9 +1,36 @@
 import { Router } from 'express';
-import { getAllContracts, getMyContracts, updateContractStatus, getContractViewUrl, submitContract } from '../controllers/contractController.js';
+import multer from 'multer';
+import {
+  getAllContracts,
+  getMyContracts,
+  updateContractStatus,
+  getContractViewUrl,
+  submitContract,
+  uploadContract,
+} from '../controllers/contractController.js';
 
 const router = Router();
 
-// Submit a new contract
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (allowedTypes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Invalid file type. Only PDF, DOC, DOCX allowed.'));
+  },
+});
+
+// Upload a contract file to S3 and create a DB record
+router.post('/upload', upload.single('file'), uploadContract);
+
+// Submit a contract with an already-uploaded file URL
 router.post('/', submitContract);
 
 // Get all contracts (for admin portal)

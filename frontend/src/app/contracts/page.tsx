@@ -62,7 +62,7 @@ export default function ContractUploadForm() {
     formData.append("file", fileToUpload);
 
     try {
-      const response = await api.post('/upload', formData);
+      const response = await api.post('/contracts/upload', formData);
 
       if (!process.env.NEXT_PUBLIC_BACKEND_API_URL) {
          await new Promise(resolve => setTimeout(resolve, 1500)); // Fake delay
@@ -109,7 +109,7 @@ export default function ContractUploadForm() {
 
     try {
       //post formdata to backend
-      const response = await api.post('/upload', formData);
+      const response = await api.post('/contracts/upload', formData);
         //parse response
       const data = response.data;
 
