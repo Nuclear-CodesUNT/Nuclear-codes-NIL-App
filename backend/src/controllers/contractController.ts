@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Contract from '../models/Contract.js';
 import Lawyer from '../models/Lawyer.js';
 import { notifyLawyerViaSNS } from '../services/snsService.js';
+import { trySignS3GetObjectUrl } from './videoControllers.js';
 
 /**
  * Get all contracts with populated user data
@@ -76,6 +77,42 @@ export const updateContractStatus = async (req: Request, res: Response): Promise
   } catch (error: unknown) {
     console.error('Error updating contract status:', error);
     return res.status(500).json({ message: 'Failed to update contract' });
+  }
+};
+
+/**
+ * Get a temporary pre-signed URL to view a contract file stored in S3.
+ * Parses the S3 object key from the stored fileUrl.
+ */
+export const getContractViewUrl = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+    const contract = await Contract.findById(id);
+
+    if (!contract) {
+      return res.status(404).json({ message: 'Contract not found' });
+    }
+
+    // Extract the S3 key from the full URL.
+    // fileUrl is stored as e.g. "https://bucket.s3.region.amazonaws.com/uploads/1234-file.pdf"
+    // We need just the "uploads/1234-file.pdf" part.
+    const url = new URL(contract.fileUrl);
+    const key = decodeURIComponent(url.pathname.slice(1)); // remove leading "/"
+
+    const signedUrl = await trySignS3GetObjectUrl(key);
+
+    if (!signedUrl) {
+      return res.status(500).json({ message: 'Failed to generate viewing URL' });
+    }
+
+    return res.status(200).json({ url: signedUrl });
+  } catch (error: unknown) {
+    console.error('Error generating contract view URL:', error);
+    return res.status(500).json({ message: 'Failed to generate viewing URL' });
   }
 };
 

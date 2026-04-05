@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllContracts, getMyContracts, updateContractStatus, submitContract } from '../controllers/contractController.js';
+import { getAllContracts, getMyContracts, updateContractStatus, getContractViewUrl, submitContract } from '../controllers/contractController.js';
 
 const router = Router();
 
@@ -11,6 +11,9 @@ router.get('/', getAllContracts);
 
 // Get contracts for current user
 router.get('/me', getMyContracts);
+
+// Get a temporary pre-signed URL to view a contract's file
+router.get('/:id/view', getContractViewUrl);
 
 // Update contract status (for admin review)
 router.patch('/:id/status', updateContractStatus);
