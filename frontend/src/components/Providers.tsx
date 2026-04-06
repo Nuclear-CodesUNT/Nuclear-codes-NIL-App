@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 
 const NavBar = dynamic(() => import("./Navbar"), { ssr: false });
 
-const PUBLIC_ROUTES = ["/", "/about", "/login", "/signup"];
+const PUBLIC_ROUTES = ["/", "/about", "/login", "/signup", "/forgot-password", "/reset-password"];
 
 function RouteGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
