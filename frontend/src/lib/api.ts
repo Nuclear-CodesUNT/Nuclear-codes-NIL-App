@@ -19,6 +19,7 @@ export async function loginUser(credentials: { email: string; password: string }
   const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(credentials)
   });
   if (!res.ok) throw new Error('Login failed');
