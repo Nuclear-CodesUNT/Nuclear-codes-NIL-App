@@ -17,6 +17,7 @@ import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import uploadRouter from "./routes/upload.js";
 import contractsRouter from "./routes/contracts.js";
 import athletesRouter from "./routes/athletes.js";
+import messagesRouter from './routes/messages.js';
 
 const app: Express = express();
 const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
@@ -35,7 +36,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Session management
-app.use(session({
+export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET!,
   resave: false,
   saveUninitialized: false,
@@ -46,7 +47,9 @@ app.use(session({
     sameSite: isProduction ? 'none' : 'lax', // cross-site cookies in production
     httpOnly: true
   }
-}));
+});
+
+app.use(sessionMiddleware);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -62,7 +65,6 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/athletes", athletesRouter);
 app.use("/api/progress", progressRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/api/contracts", contractsRouter);
-app.use("/api/upload", uploadRouter);
+app.use('/api/messages', messagesRouter);
 
 export default app;

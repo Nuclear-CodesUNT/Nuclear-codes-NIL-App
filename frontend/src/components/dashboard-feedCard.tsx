@@ -1,14 +1,14 @@
 "use client";
 
 import { Heart, MessageCircle, Share2, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card } from './ui/card';
 import { Avatar } from './ui/avatar';
-//import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Badge } from './ui/badge';
 import api from '@/lib/api';
 
 interface FeedCardProps {
+  id: string;
   athleteName: string;
   sport: string;
   school: string;
@@ -16,21 +16,15 @@ interface FeedCardProps {
   mediaUrl: string;
   caption: string;
   likes: number;
+  isLiked?: boolean;
   comments: number;
   timeAgo: string;
   avatarUrl?: string;
   athleteId?: string; // Athlete document _id (used for highlights fetch)
 }
 
-type Highlight = {
-  highlightId: string;
-  title?: string;
-  thumbnailUrl?: string;
-  videoUrl?: string;
-  addedAt?: string;
-};
-
 export default function FeedCard({
+  id,
   athleteName,
   sport,
   school,
@@ -38,36 +32,34 @@ export default function FeedCard({
   mediaUrl,
   caption,
   likes,
+  isLiked,
   comments,
   timeAgo,
   avatarUrl,
   athleteId,
 }: FeedCardProps) {
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [activeHighlightId, setActiveHighlightId] = useState<string>("");
 
-  useEffect(() => {
-    const loadHighlights = async () => {
-      if (postType !== "video") return;
-      if (!athleteId) return;
+  // Local state for the optimistic UI
+  const [liked, setLiked] = useState(isLiked || false);
+  const [likeCount, setLikeCount] = useState(likes || 0);
 
-      try {
-        const { data } = await api.get(`/athletes/${athleteId}/highlights`);
-        const list: Highlight[] = Array.isArray(data?.highlights) ? data.highlights : [];
-        setHighlights(list);
-        if (list.length > 0) {
-          setActiveHighlightId((prev) => prev || String(list[0].highlightId));
-        }
-      } catch {
-        // ignore
-      }
-    };
+  const handleLikeClick = async () => {
+    if (!athleteId) return; // Prevent liking if not logged in
 
-    loadHighlights();
-  }, [athleteId, postType]);
+    // Optimistic UI toggle
+    setLiked(!liked);
+    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
 
-  const activeHighlight = highlights.find((h) => String(h.highlightId) === String(activeHighlightId)) || null;
-  const activeVideoUrl = activeHighlight?.videoUrl || "";
+    try {
+      // Fire the request to the backend
+      await api.post(`/videos/${id}/like`, { userId: athleteId });
+    } catch (error) {
+      console.error("Failed to toggle like", error);
+      // Revert if the server fails
+      setLiked(liked);
+      setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+    }
+  };
 
   return (
     <Card className="bg-white border-gray-200 overflow-hidden shadow-sm">
@@ -100,10 +92,11 @@ export default function FeedCard({
           alt={caption}
           className="w-full h-full object-cover"
         />**/}
-        {postType === "video" && activeVideoUrl ? (
+        
+        {/* 3. Simplified Video Player Logic */}
+        {postType === "video" && mediaUrl ? (
           <video
-            key={activeHighlightId}
-            src={activeVideoUrl}
+            src={mediaUrl}
             controls
             className="w-full h-full object-cover"
           />
@@ -116,31 +109,7 @@ export default function FeedCard({
         ) : null}
       </div>
 
-      {/* Highlights (below large video section) */}
-      {postType === "video" && highlights.length > 0 && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600 mb-2">Highlights</div>
-          <div className="flex gap-3 overflow-x-auto">
-            {highlights.map((h) => (
-              <button
-                key={h.highlightId}
-                type="button"
-                onClick={() => setActiveHighlightId(String(h.highlightId))}
-                className={`shrink-0 w-32 border rounded overflow-hidden text-left ${String(h.highlightId) === String(activeHighlightId) ? "border-black" : "border-gray-200"
-                  }`}
-                aria-label={h.title || "Highlight"}
-              >
-                <img
-                  src={h.thumbnailUrl || "/images/court.png"}
-                  alt={h.title || "Highlight"}
-                  className="w-full h-20 object-cover"
-                />
-                <div className="p-2 text-xs text-gray-700 truncate">{h.title || "Untitled"}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 4. Completely removed the entire Highlights mapped UI block */}
 
       {/* Content */}
       <div className="p-4">
@@ -149,9 +118,12 @@ export default function FeedCard({
         {/* Actions */}
         <div className="flex items-center justify-between text-gray-600">
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
-              <Heart className="h-5 w-5" />
-              <span>{likes}</span>
+            <button 
+              onClick={handleLikeClick}
+              className={`flex items-center gap-2 transition-colors ${liked ? 'text-red-500' : 'hover:text-[#00D9FF]'}`}
+            >
+              <Heart className="h-5 w-5" fill={liked ? 'currentColor' : 'none'} />
+              <span>{likeCount}</span>
             </button>
             <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
               <MessageCircle className="h-5 w-5" />

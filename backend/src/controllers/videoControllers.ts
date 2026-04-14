@@ -172,3 +172,44 @@ export const createVideo = async (req: Request, res: Response) => {
     });
   }
 };
+
+// POST /api/videos/:id/like
+export const toggleLikeVideo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // The video ID
+    const { userId } = req.body; // The ID of the person liking it
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required." });
+    }
+
+    const video = await Videos.findById(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: "Video not found." });
+    }
+
+    // Safety check for older dummy data
+    if (!video.likedBy) video.likedBy = [];
+
+    const hasLiked = video.likedBy.includes(userId);
+
+    if (hasLiked) {
+      // If already liked, remove them (Unlike)
+      video.likedBy = video.likedBy.filter((uid) => uid !== userId);
+    } else {
+      // If not liked, add them (Like)
+      video.likedBy.push(userId);
+    }
+
+    await video.save();
+
+    return res.status(200).json({
+      success: true,
+      liked: !hasLiked,
+      likesCount: video.likedBy.length
+    });
+  } catch (error) {
+    console.error("toggleLikeVideo error:", error);
+    return res.status(500).json({ success: false, message: "Server error toggling like." });
+  }
+};
