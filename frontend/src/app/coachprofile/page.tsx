@@ -50,6 +50,7 @@ export default function CoachProfile() {
 
         setLoggedInUserId(data.user?._id || null);
         setLoading(false);
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.response?.data?.error || "Network error");
         setLoading(false);
@@ -65,24 +66,25 @@ export default function CoachProfile() {
 
   return (
     <div
-      className="min-h-screen bg-contain bg-center bg-no-repeat grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full"
+      className="min-h-screen bg-contain bg-center bg-no-repeat grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_24rem] gap-6 pt-12 px-6 md:px-12 max-w-full"
       style={{ backgroundImage: "url('/images/NILLAWEdited.png')" }}
     >
-      <div className="flex flex-col gap-6 pr-4">
-
+      <div className="flex flex-col gap-6 pr-4 min-w-0">
         {/* Profile Frame */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white/70 border border-gray-300 rounded-lg p-8 pb-10 gap-6">
-          
+
           {/* Profile picture */}
           <div className="shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profile.profilePicture}
               className="w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border border-gray-200"
+              alt="Coach profile"
             />
           </div>
 
           {/* Coach Info Card */}
-          <div className="relative flex flex-col gap-4 w-full p-6 bg-white/0 border border-gray-200 rounded-lg">
+          <div className="relative flex flex-col gap-4 w-full min-w-0 p-6 bg-white/0 border border-gray-200 rounded-lg">
 
             {/* Edit Profile button */}
             {loggedInUserId === profile.userId && (
@@ -171,16 +173,17 @@ export default function CoachProfile() {
                 <MessageSquare className="w-5 h-5" /> Message
               </button>
             </div>
-
           </div>
         </div>
       </div>
 
       {/* Messages Frame only displayed if viewing your own profile */}
-      {profile?.userId === loggedInUserId && (
-        <div className="hidden lg:block">
-          <div className="bg-white border border-gray-300 rounded-lg p-6 h-fit sticky top-24">
-            <MessagesOverview />
+      {profile.userId === loggedInUserId && (
+        <div className="hidden lg:block w-96 shrink-0">
+          <div className="bg-white border border-gray-300 rounded-lg p-6 h-fit sticky top-24 overflow-hidden">
+            <div className="min-w-0">
+              <MessagesOverview />
+            </div>
           </div>
         </div>
       )}
