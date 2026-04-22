@@ -5,7 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "nodemon --watch src --exec tsx src/server.ts",
-    "build": "tsc -p tsconfig.json && cp src/swagger.yaml dist/swagger.yaml",
+    "build": "tsc -p tsconfig.json && shx cp src/swagger.yaml dist/swagger.yaml",
     "start": "node ./dist/server.js"
   },
   "keywords": [],
@@ -28,10 +28,14 @@
     "esbuild": "^0.27.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
     "google-auth-library": "^10.6.1",
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",
     "nanoid": "^5.1.6",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
@@ -47,6 +51,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
     "nodemon": "^3.1.14",
+    "shx": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

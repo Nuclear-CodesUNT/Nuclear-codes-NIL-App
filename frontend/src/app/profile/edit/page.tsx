@@ -13,6 +13,44 @@ import api from '@/lib/api';
 
 const MAX_GAME_DAYS = 6;
 
+function dateKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatMMDDYYYYFromISO(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function formatDateInputMMDDYYYY(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  const mm = digits.slice(0, 2);
+  const dd = digits.slice(2, 4);
+  const yyyy = digits.slice(4, 8);
+  if (digits.length <= 2) return mm;
+  if (digits.length <= 4) return `${mm}/${dd}`;
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function parseMMDDYYYYToLocalDate(input: string): Date | null {
+  const m = input.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return null;
+  const mm = Number(m[1]);
+  const dd = Number(m[2]);
+  const yyyy = Number(m[3]);
+  if (!Number.isFinite(mm) || !Number.isFinite(dd) || !Number.isFinite(yyyy)) return null;
+  if (mm < 1 || mm > 12) return null;
+  if (dd < 1 || dd > 31) return null;
+  const d = new Date(yyyy, mm - 1, dd);
+  // Ensure JS didn't roll the date (e.g., 02/31/2026).
+  if (d.getFullYear() !== yyyy || d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+  return d;
+}
+
 interface GameDay {
   _id?: string; // exists if coming from DB
   date: string; // ISO string (important)
@@ -79,9 +117,14 @@ export default function EditAthleteProfile({
 
   // Highlights
   const [athleteId, setAthleteId] = useState<string | null>(null);
-  const [selectedGameDayId, setSelectedGameDayId] = useState<string>("");
+  const [selectedHighlightDate, setSelectedHighlightDate] = useState<string>("");
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  const parsedHighlightDate = parseMMDDYYYYToLocalDate(selectedHighlightDate);
+  const selectedGameDayForHighlight = parsedHighlightDate
+    ? gameDays.find((g) => dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsedHighlightDate))
+    : undefined;
 
   const [limitPopup, setLimitPopup] = useState<null | {
     message: string;
@@ -171,11 +214,13 @@ export default function EditAthleteProfile({
   }) {
     try {
       const { data } = await api.post('/athletes/me/highlights', args);
-      return { ok: true, status: 200, data };
+      return { res: { ok: true, status: 200}, data };
     } catch (err: any) {
-      return {
-        ok: false,
-        status: err.response?.status ?? 500,
+      return { 
+        res: {
+          ok: false,
+          status: err.response?.status ?? 500,
+        },
         data: err.response?.data ?? {},
       };
     }
@@ -189,13 +234,14 @@ export default function EditAthleteProfile({
     // reset input so selecting same file again still triggers
     e.target.value = "";
 
-    if (!selectedGameDayId) {
-      alert("Select a game day first.");
+    const parsed = parseMMDDYYYYToLocalDate(selectedHighlightDate);
+    if (!parsed) {
+      alert("Enter a valid game date first (MM/DD/YYYY).");
       return;
     }
 
-    const selectedGameDay = gameDays.find((g) => String(g._id) === String(selectedGameDayId));
-    if (!selectedGameDay?._id) {
+    const match = gameDays.find((g) => dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsed));
+    if (!match?._id) {
       alert("That game day isn't saved yet. Save your profile first, then attach highlights.");
       return;
     }
@@ -215,13 +261,15 @@ export default function EditAthleteProfile({
           return;
         }
         vid = String(upData.video._id);
-      } catch (err: any) {
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any 
+      catch (err: any) {
         alert(err.response?.data?.error || err.response?.data?.message || "Upload failed");
         return;
       }
       const { res: attRes, data: attData } = await attachHighlight({
         videoId: vid,
-        gameDayId: String(selectedGameDayId),
+        gameDayId: String(match._id),
       });
 
       if (attRes.status === 409) {
@@ -233,7 +281,7 @@ export default function EditAthleteProfile({
           existingHighlights,
           suggestedRemove: attData.suggestedRemove,
           pendingVideoId: vid,
-          pendingGameDayId: String(selectedGameDayId),
+          pendingGameDayId: String(match._id),
           selectedRemoveId: String(attData.suggestedRemove?.highlightId || ""),
         });
         return;
@@ -352,7 +400,9 @@ export default function EditAthleteProfile({
 
           // default selection to the first saved game day
           const firstSaved = formattedGameDays.find((g) => !!g._id);
-          if (firstSaved?._id) setSelectedGameDayId((prev) => prev || String(firstSaved._id));
+          if (firstSaved?._id) {
+            setSelectedHighlightDate((prev) => prev || formatMMDDYYYYFromISO(firstSaved.date));
+          }
         } else {
           setGameDays([]);
         }
@@ -513,28 +563,97 @@ export default function EditAthleteProfile({
           <div className="bg-white border border-gray-300 rounded-lg p-6">
             <h2 className="text-xl mb-4">Video Highlights</h2>
 
-            {/* GameDay selector */}
+            {/* Game date input */}
             <div className="mb-4">
-              <label className="text-sm font-medium text-gray-700">Attach highlight to game day</label>
-              <select
-                value={selectedGameDayId}
-                onChange={(e) => setSelectedGameDayId(e.target.value)}
+              <label className="text-sm font-medium text-gray-700">Game date (MM/DD/YYYY)</label>
+              <input
+                value={selectedHighlightDate}
+                onChange={(e) => {
+                  const formatted = formatDateInputMMDDYYYY(e.target.value);
+                  setSelectedHighlightDate(formatted);
+
+                  const parsed = parseMMDDYYYYToLocalDate(formatted);
+                  if (!parsed) {
+                    return;
+                  }
+
+                  const match = gameDays.find((g) => dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsed));
+                  if (!match && gameDays.length >= MAX_GAME_DAYS) {
+                    return;
+                  }
+
+                  // Ensure the game day exists in state so details can be edited/saved.
+                  if (!match) {
+                    setGameDays((prev) => {
+                      const already = prev.some((g) => dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsed));
+                      if (already) return prev;
+                      const next = [
+                        ...prev,
+                        {
+                          _id: undefined,
+                          date: parsed.toISOString(),
+                          homeAway: "Home" as const,
+                          opponent: "",
+                        },
+                      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                      return next;
+                    });
+                  }
+                }}
+                inputMode="numeric"
+                placeholder="__/__/____"
                 className="w-full border border-gray-300 rounded-md p-2 mt-1"
-              >
-                <option value="">Select a game day</option>
-                {gameDays
-                  .slice()
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .map((g) => (
-                    <option key={g._id || g.date} value={g._id || ""} disabled={!g._id}>
-                      {new Date(g.date).toLocaleDateString()} — {g.homeAway} vs {g.opponent || "(opponent)"}
-                      {!g._id ? " (save first)" : ""}
-                    </option>
-                  ))}
-              </select>
+              />
               <p className="text-xs text-gray-500 mt-1">
-                Highlights are stored under the selected game day. New game days must be saved before attaching.
+                Enter a saved game date to attach highlights. New game days must be saved before attaching.
               </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Home or Away</label>
+                <select
+                  value={selectedGameDayForHighlight?.homeAway || "Home"}
+                  disabled={!selectedGameDayForHighlight}
+                  onChange={(e) => {
+                    if (!parsedHighlightDate) return;
+                    const value = e.target.value as "Home" | "Away";
+                    setGameDays((prev) =>
+                      prev.map((g) =>
+                        dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsedHighlightDate)
+                          ? { ...g, homeAway: value }
+                          : g
+                      )
+                    );
+                  }}
+                  className="w-full border border-gray-300 rounded-md p-2 mt-1 disabled:bg-gray-100"
+                >
+                  <option value="Home">Home</option>
+                  <option value="Away">Away</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Opponent</label>
+                <input
+                  type="text"
+                  value={selectedGameDayForHighlight?.opponent || ""}
+                  disabled={!selectedGameDayForHighlight}
+                  onChange={(e) => {
+                    if (!parsedHighlightDate) return;
+                    const opponent = e.target.value;
+                    setGameDays((prev) =>
+                      prev.map((g) =>
+                        dateKeyLocal(new Date(g.date)) === dateKeyLocal(parsedHighlightDate)
+                          ? { ...g, opponent }
+                          : g
+                      )
+                    );
+                  }}
+                  placeholder="Team Name"
+                  className="w-full border border-gray-300 rounded-md p-2 mt-1 disabled:bg-gray-100"
+                />
+              </div>
             </div>
 
             {/* Drag & Drop Upload Box */}
@@ -665,13 +784,6 @@ export default function EditAthleteProfile({
                   }
 
                   setGameDays(next);
-
-                  // If the selected game day for highlight upload no longer exists, clear it.
-                  setSelectedGameDayId((prev) => {
-                    if (!prev) return prev;
-                    const stillExists = next.some((g) => String(g._id) === String(prev));
-                    return stillExists ? prev : "";
-                  });
                 }}
                 showOutsideDays
                 className="w-full max-w-[350px]"
@@ -685,82 +797,7 @@ export default function EditAthleteProfile({
             </div>
           </div>
 
-          {/* Selected Game Days List */}
-          {gameDays.length > 0 ? (
-            <div className="mt-4">
-              <h3 className="text-md mb-2 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-gray-700" /> Selected Game Days
-              </h3>
-              <ul className="space-y-2">
-                {gameDays.map((game) => {
-                  const gameDate = new Date(game.date); // convert ISO string to Date
-
-                  return (
-                    <li
-                      key={game._id || game.date} // use _id if exists
-                      className="flex flex-col gap-2 border border-gray-200 rounded p-3 text-sm"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{gameDate.toDateString()}</span>
-                        <button
-                          onClick={() =>
-                            setGameDays((prev) =>
-                              prev.filter((g) => g.date !== game.date)
-                            )
-                          }
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Home/Away Selector */}
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">Home or Away</label>
-                        <select
-                          value={game.homeAway}
-                          onChange={(e) => {
-                            const value = e.target.value as "Home" | "Away";
-                            setGameDays((prev) =>
-                              prev.map((g) =>
-                                g.date === game.date ? { ...g, homeAway: value } : g
-                              )
-                            );
-                          }}
-                          className="w-full border border-gray-300 rounded p-2 mt-1"
-                        >
-                          <option value="Home">Home</option>
-                          <option value="Away">Away</option>
-                        </select>
-                      </div>
-
-                      {/* Opponent Name */}
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">Opponent</label>
-                        <input
-                          type="text"
-                          value={game.opponent}
-                          onChange={(e) =>
-                            setGameDays((prev) =>
-                              prev.map((g) =>
-                                g.date === game.date ? { ...g, opponent: e.target.value } : g
-                              )
-                            )
-                          }
-                          className="w-full border border-gray-300 rounded p-2 mt-1"
-                          placeholder="Team Name"
-                        />
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 mt-3 text-center">
-              No game days selected yet. Click on the calendar to add.
-            </p>
-          )}
+          {/* Selected Game Days List removed (per UX request) */}
         </div>
       </div>
 
@@ -934,13 +971,6 @@ export default function EditAthleteProfile({
 
                   setGameDays(reduced);
                   setGameDayLimitPopup(null);
-
-                  // If highlight upload selection no longer exists, clear it.
-                  setSelectedGameDayId((prev) => {
-                    if (!prev) return prev;
-                    const stillExists = reduced.some((g) => String(g._id) === String(prev));
-                    return stillExists ? prev : "";
-                  });
                 }}
               >
                 Remove Selected

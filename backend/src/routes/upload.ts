@@ -15,39 +15,20 @@ const upload = multer({
     fileSize: parseInt(process.env.MAX_FILE_SIZE || "524288000", 10),
   },
   fileFilter: (
-    req: Request,
+    _req: Request,
     file: Express.Multer.File,
     cb: FileFilterCallback
   ) => {
-    const allowedTypes = (
-      process.env.ALLOWED_FILE_TYPES ||
-      [
-        "video/avi",
-        "video/mp4",
-        "video/quicktime",
-        "video/webm",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/octet-stream",
-      ].join(",")
-    )
-      .split(",")
-      .map((t) => t.trim());
-
-    const allowedExt = ["avi", "mp4", "mov", "webm", "pdf", "doc", "docx"];
+    const allowedExt = ["avi", "mp4", "mov", "webm"];
     const ext = (file.originalname.split(".").pop() || "").toLowerCase();
 
     if (!allowedExt.includes(ext)) {
-      return cb(
-        new Error("Invalid file extension. Allowed: .avi, .pdf, .doc, .docx, .mp4, .mov, .webm.")
-      );
+      return cb(new Error("Invalid file extension. Allowed: .avi, .mp4, .mov, .webm."));
     }
 
+    const allowedTypes = ["video/avi", "video/mp4", "video/quicktime", "video/webm"];
     if (!allowedTypes.includes(file.mimetype)) {
-      return cb(
-        new Error(`Invalid file type (${file.mimetype}). Allowed: AVI/PDF/DOC/DOCX/MP4/MOV/WEBM.`)
-      );
+      return cb(new Error(`Invalid file type (${file.mimetype}). Allowed: AVI/MP4/MOV/WEBM.`));
     }
 
     return cb(null, true);
@@ -84,9 +65,6 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
       !process.env.S3_BUCKET_NAME ||
       !process.env.AWS_REGION;
 
-    const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
-    const isVideo = ["mp4", "mov", "webm"].includes(ext);
-
     let videoUrl = "";
     let key = "";
     let thumbnailUrl = "";
@@ -101,11 +79,11 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
 
       key = filename;
       const base = baseUrlFromRequest(req);
-      videoUrl = base ? `${base}/uploads/${encodeURIComponent(filename)}` : "";
+      videoUrl = base ? `${base}/videos/${encodeURIComponent(filename)}` : "";
     } else {
       const s3 = await getAssumedS3();
       const bucket = process.env.S3_BUCKET_NAME!;
-      key = `uploads/${Date.now()}-${safeFilename(req.file.originalname)}`;
+      key = `videos/${Date.now()}-${safeFilename(req.file.originalname)}`;
       const uploadResult = await s3
         .upload({
           Bucket: bucket,
@@ -165,7 +143,7 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
           await fs.copyFile(tempThumbPath, thumbDest);
           thumbnailKey = thumbName;
           const base = baseUrlFromRequest(req);
-          thumbnailUrl = base ? `${base}/uploads/${encodeURIComponent(thumbName)}` : "";
+          thumbnailUrl = base ? `${base}/thumbnails/${encodeURIComponent(thumbName)}` : "";
         } else {
           const s3 = await getAssumedS3();
           const bucket = process.env.S3_BUCKET_NAME!;
@@ -219,7 +197,6 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
       video: createdVideo,
     });
   } catch (err: any) {
-    // Cleanup temp files if we created them
     if (tempVideoPath || tempThumbPath) {
       await cleanupFiles([tempVideoPath || "", tempThumbPath || ""]);
     }
@@ -228,7 +205,7 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
 });
 
 // Multer error handler
-router.use((err: any, req: Request, res: Response, next: any) => {
+router.use((err: any, _req: Request, res: Response, _next: any) => {
   if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({ success: false, message: "File too large" });
   }

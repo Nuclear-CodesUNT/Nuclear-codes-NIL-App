@@ -13,12 +13,12 @@ export interface ILawyer extends Document {
 
 const LawyerSchema = new Schema<ILawyer>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  barNumber: { type: String, required: true, unique: true },
-  state: { type: String, required: true },
+  barNumber: { type: String, required: false },
+  state: { type: String, required: false },
   firmName: { type: String },
   specializations: [{ type: String }],
   profilepicture: { type: String, default: ""},
-  yearsOfExperience: { type: Number, required: true, min: 0 },
+  yearsOfExperience: { type: Number, required: false, min: 0 },
   bio: { type: String, default: "" }
 }, {
   timestamps: true

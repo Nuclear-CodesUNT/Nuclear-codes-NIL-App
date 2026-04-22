@@ -60,6 +60,34 @@ export default function ContractUploadForm() {
     setFile(selectedFile);
     setUploadStatus('idle'); // Reset status for new file
     displayFile(selectedFile);
+    // await uploadFile(selectedFile);
+  };
+
+  const uploadFile = async (fileToUpload: File) => {
+    setUploadStatus('uploading');
+    const formData = new FormData();
+    formData.append("file", fileToUpload);
+
+    try {
+      const response = await api.post('/contracts/upload', formData);
+
+      if (!process.env.NEXT_PUBLIC_BACKEND_API_URL) {
+         await new Promise(resolve => setTimeout(resolve, 1500)); // Fake delay
+         setUploadStatus('success');
+         return;
+      }
+
+      const result = response.data;
+      if (result.success) {
+        setUploadStatus('success');
+      } else {
+        setUploadStatus('error');
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      // Fallback for demo if fetch fails (e.g. no backend running)
+      setUploadStatus('error'); 
+    }
   };
 
   const displayFile = (fileToUpload: File) => {
@@ -87,24 +115,9 @@ export default function ContractUploadForm() {
     formData.append('lawyer', currentLawyerId || '');;
 
     try {
-      // Fake backend call for demo purposes if API fails or is not set up
-      // Remove this timeout block if your API is actually running
-      if (!process.env.NEXT_PUBLIC_BACKEND_API_URL) {
-         await new Promise(resolve => setTimeout(resolve, 1500));
-         const newSubmission: SubmittedFile = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: file.name,
-            size: file.size,
-            status: 'Pending',
-            submittedAt: new Date(),
-         };
-         setUploadStatus('success');
-         setSubmittedFiles(prev => [newSubmission, ...prev]);
-         removeFile();
-         return;
-      }
-
-      const response = await api.post('/upload', formData);
+      //post formdata to backend
+      const response = await api.post('/contracts/upload', formData);
+        //parse response
       const data = response.data;
 
       if (data.success) {

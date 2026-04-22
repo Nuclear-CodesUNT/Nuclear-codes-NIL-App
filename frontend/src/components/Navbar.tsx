@@ -40,11 +40,18 @@ export default function NavBar() {
           <Image src="/logo/NIL Law.svg" alt="NIL Law Logo" width={80} height={80} className="rounded-md object-contain" />
         </Link>
         <div className="flex gap-4">
-          <Link href="/about" className={navLinkClass("/about")}>
+
+          {!user &&(
+            <Link href="/about" className={navLinkClass("/about")}>
             <span>About</span>
           </Link>
+          )}
+  
           {user && user.role && (
             <>
+              <Link href="/dashboard" className={navLinkClass("/dashboard")}>
+                <span>Dashboard</span>
+              </Link>
               <Link // Different links for different profile types
                 href={
                   user?.role === "athlete"
@@ -64,11 +71,13 @@ export default function NavBar() {
                   <span>Admin Portal</span>
                 </Link>
               )}
-              <Link href="/dashboard" className={navLinkClass("/dashboard")}>
-                <span>Dashboard</span>
-              </Link>
-              <Link href="/contracts" className={navLinkClass("/contracts")}>
+              {(user.role === 'athlete') && (
+                <Link href="/contracts" className={navLinkClass("/contracts")}>
                 <span>Contracts</span>
+              </Link>
+              )}
+              <Link href="/messages" className={navLinkClass("/messages")}>
+                <span>Messages</span>
               </Link>
             </>
           )}
