@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { MessageSquare, MapPin } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import MessagesOverview from '../../components/dashboard-messages';
 import api from '@/lib/api';
 
@@ -44,6 +44,7 @@ export default function LawyerProfile() {
 
         setLoggedInUserId(data.user._id);
         setLoading(false);
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.response?.data?.error || "Network error");
         setLoading(false);
@@ -62,106 +63,107 @@ export default function LawyerProfile() {
   }
 
   return (
-    <>
-      {/* Main container */}
-      <div
-      className="min-h-screen bg-contain bg-center bg-no-repeat grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 pt-12 px-6 md:px-12 max-w-full"
+    <div
+      className="min-h-screen bg-contain bg-center bg-no-repeat grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_24rem] gap-6 pt-12 px-6 md:px-12 max-w-full"
       style={{ backgroundImage: "url('/images/NILLAWEdited.png')" }}
     >
 
-        {/* Left Column Profile */}
-        <div className="flex flex-col gap-6 pr-4">
+      {/* Left Column Profile */}
+      <div className="flex flex-col gap-6 pr-4 min-w-0">
 
-          {/* Profile Frame */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white/70 border border-gray-300 rounded-lg p-8 pb-10 gap-6">
-            
-            {/* Profile picture */}
-            <div className="shrink-0">
-              <img
-                src={profile?.profilepicture || "/images/ProfilepicPlaceholder.png"}
-                className="w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border border-gray-200"
-              />
+        {/* Profile Frame */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start bg-white/70 border border-gray-300 rounded-lg p-8 pb-10 gap-6">
+
+          {/* Profile picture */}
+          <div className="shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={profile?.profilepicture || "/images/ProfilepicPlaceholder.png"}
+              className="w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border border-gray-200"
+              alt="Lawyer profile"
+            />
+          </div>
+
+          {/* Lawyer Info Card */}
+          <div className="relative flex flex-col gap-4 w-full p-6 bg-white/0 border border-gray-200 rounded-lg">
+
+            {/* Edit Profile button (top-right corner of info card) */}
+            {loggedInUserId === profile?.userId && (
+              <Link
+                href="/lawyerprofile/edit"
+                className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 hover:bg-gray-300 text-sm border border-gray-300 rounded-md"
+              >
+                Edit Profile
+              </Link>
+            )}
+
+            {/* Lawyer Name */}
+            <div className="text-xl font-semibold">{profile?.userName || "Lawyer Name"}</div>
+
+            {/* Bar Number */}
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="font-medium">Bar Number:</span> {profile?.barNumber || "N/A"}
             </div>
 
-            {/* Lawyer Info Card */}
-            <div className="relative flex flex-col gap-4 w-full p-6 bg-white/0 border border-gray-200 rounded-lg">
+            {/* State */}
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="font-medium">State:</span> {profile?.state || "N/A"}
+            </div>
 
-              {/* Edit Profile button (top-right corner of info card) */}
-              {loggedInUserId === profile?.userId && (
-                <Link
-                  href="/lawyerprofile/edit"
-                  className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 hover:bg-gray-300 text-sm border border-gray-300 rounded-md"
-                >
-                  Edit Profile
-                </Link>
-              )}
-
-              {/* Lawyer Name */}
-              <div className="text-xl font-semibold">{profile?.userName || "Lawyer Name"}</div>
-
-              {/* Bar Number */}
+            {/* Firm Name */}
+            {profile?.firmName && (
               <div className="flex items-center gap-2 text-gray-700">
-                <span className="font-medium">Bar Number:</span> {profile?.barNumber || "N/A"}
+                <span className="font-medium">Firm:</span> {profile.firmName}
               </div>
+            )}
 
-              {/* State */}
-              <div className="flex items-center gap-2 text-gray-700">
-                <span className="font-medium">State:</span> {profile?.state || "N/A"}
+            {/* Specializations */}
+            {profile?.specializations && profile.specializations.length > 0 && (
+              <div className="flex flex-col text-gray-700">
+                <span className="font-medium">Specializations:</span>
+                <ul className="list-disc list-inside ml-2">
+                  {profile.specializations.map((spec: string, idx: number) => (
+                    <li key={idx}>{spec}</li>
+                  ))}
+                </ul>
               </div>
+            )}
 
-              {/* Firm Name */}
-              {profile?.firmName && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <span className="font-medium">Firm:</span> {profile.firmName}
-                </div>
-              )}
+            {/* Years of Experience */}
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="font-medium">Years of Experience:</span> {profile?.yearsOfExperience ?? "N/A"}
+            </div>
 
-              {/* Specializations */}
-              {profile?.specializations && profile.specializations.length > 0 && (
-                <div className="flex flex-col text-gray-700">
-                  <span className="font-medium">Specializations:</span>
-                  <ul className="list-disc list-inside ml-2">
-                    {profile.specializations.map((spec: string, idx: number) => (
-                      <li key={idx}>{spec}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Years of Experience */}
-              <div className="flex items-center gap-2 text-gray-700">
-                <span className="font-medium">Years of Experience:</span> {profile?.yearsOfExperience ?? "N/A"}
+            {/* Bio at the bottom */}
+            {profile?.bio && (
+              <div className="mt-4 text-gray-700 border-t border-gray-200 pt-3">
+                <span className="font-medium">Bio:</span>
+                <p className="mt-1">{profile.bio}</p>
               </div>
+            )}
 
-              {/* Bio at the bottom */}
-              {profile?.bio && (
-                <div className="mt-4 text-gray-700 border-t border-gray-200 pt-3">
-                  <span className="font-medium">Bio:</span>
-                  <p className="mt-1">{profile.bio}</p>
-                </div>
-              )}
 
-           
 
-              {/* Message Button */}
-              <div className="flex justify-end gap-3 py-1">
-                <button className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-900 text-white rounded">
-                  <MessageSquare className="w-5 h-5" /> Message
-                </button>
-              </div>
+            {/* Message Button */}
+            <div className="flex justify-end gap-3 py-1">
+              <button className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-900 text-white rounded">
+                <MessageSquare className="w-5 h-5" /> Message
+              </button>
             </div>
           </div>
-        </div> {/* End Left Column */}
+        </div>
+      </div> {/* End Left Column */}
 
-        {/* Messages Frame only displayed if viewing your own profile */}
-        {profile?.userId === loggedInUserId && (
-          <div className="hidden lg:block">
-          <div className="bg-white border border-gray-300 rounded-lg p-6 h-fit sticky top-24">
+      {/* Messages Frame only displayed if viewing your own profile */}
+      {profile?.userId === loggedInUserId && (
+        <div className="hidden lg:block w-96 shrink-0">
+          <div className="bg-white border border-gray-300 rounded-lg p-6 h-fit sticky top-24 overflow-hidden">
+            <div className="min-w-0">
               <MessagesOverview />
             </div>
           </div>
-          )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 }
