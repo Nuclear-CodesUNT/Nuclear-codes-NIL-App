@@ -208,7 +208,7 @@ export default function Login() {
               className="w-12 h-12 rounded-full object-cover"
             />
             <div>
-              <p className="text-white font-semibold">LeBron James</p>
+              <p className="text-white font-semibold">JeBron Lames</p>
               <p className="text-gray-400 text-sm">Greatest basketball player of all time</p>
             </div>
           </div>

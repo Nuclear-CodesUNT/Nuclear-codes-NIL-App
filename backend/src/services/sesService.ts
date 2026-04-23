@@ -50,7 +50,7 @@ export const sendPasswordResetEmail = async (toEmail: string, resetUrl: string) 
     <html>
       <body>
         <h2>Password Reset Request</h2>
-        <p>You requested a password reset for your NIL Connect account.</p>
+        <p>You requested a password reset for your NIL Law account.</p>
         <p>Click the link below to reset your password. This link expires in 1 hour.</p>
         <p>
           <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background-color:#4F46E5;color:#ffffff;text-decoration:none;border-radius:4px;">
@@ -60,7 +60,7 @@ export const sendPasswordResetEmail = async (toEmail: string, resetUrl: string) 
         <p>If you did not request a password reset, you can safely ignore this email.</p>
         <p>For security, this link will expire in 1 hour.</p>
         <hr/>
-        <p style="font-size:12px;color:#6B7280;">NIL Connect — Name, Image, and Likeness Platform</p>
+        <p style="font-size:12px;color:#6B7280;">NIL Law Agency</p>
       </body>
     </html>
   `;
@@ -68,7 +68,7 @@ export const sendPasswordResetEmail = async (toEmail: string, resetUrl: string) 
   const textBody = `
 Password Reset Request
 
-You requested a password reset for your NIL Connect account.
+You requested a password reset for your NIL Law account.
 
 Click the link below to reset your password. This link expires in 1 hour.
 
@@ -76,7 +76,7 @@ ${resetUrl}
 
 If you did not request a password reset, you can safely ignore this email.
 
-NIL Connect — Name, Image, and Likeness Platform
+NIL Law Agency
   `.trim();
 
   const params = {
@@ -86,7 +86,7 @@ NIL Connect — Name, Image, and Likeness Platform
     },
     Message: {
       Subject: {
-        Data: 'Reset your NIL Connect password',
+        Data: 'Reset your NIL Law password',
         Charset: 'UTF-8',
       },
       Body: {

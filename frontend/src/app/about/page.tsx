@@ -10,7 +10,7 @@ export default function About() {
           <div className="flex-1">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Name, Your Image, Your Legacy.<br/> We Protect and Empower It All.</h1>
             <p className="text-lg md:text-xl text-slate-200 max-w-3xl">
-              At NIL Athlete Law & Agency PLLC, we are built on a simple, powerful belief:<br/> Your athletic talent is only one part of your potential.<br/>Your name, image, and likeness (NIL) represent your personal brand—a valuable business asset that deserves expert protection and strategic growth. <br/>We are more than just legal advisors; we are your partners in building a foundation for generational wealth.
+              At NIL Athlete Law & Agency PLLC, we are built on a simple, powerful belief:<br/> Your athletic talent is only one part of your potential.<br/>Your name, image, and likeness represent your personal brand, a valuable business asset that deserves expert protection and strategic growth. <br/>We are more than just legal advisors; we are your partners in building a foundation for generational wealth.
             </p>
           </div>
           <div className="shrink-0">
@@ -49,15 +49,16 @@ export default function About() {
               Ready to build more than just a brand? Contact Us today to begin the journey.
             </p>
             <Link href="/signup"
-            className="btn-primary \!bg-slate-700">
+            className="btn-primary \!bg-slate-700 border border-white">
                 Get Started!
             </Link>
             <p className="text-slate-200 text-sm mt-4">
-              Serving over 10,000 athletes across 500+ universities nationwide
             </p>
           </div>
         </div>
       </section>
+
+      {/* #273370 */}
 
       {/* Core Values Section */}
       <section className="bg-brand-navy py-16 px-6">
@@ -93,7 +94,7 @@ export default function About() {
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
+              <div className="w-12 h-12 bg-brand-navy text-white rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 4
               </div>
               <h3 className="text-xl font-semibold mb-3">Maintaining a Healthy Lifestyle</h3>
@@ -114,7 +115,7 @@ export default function About() {
               <span className="font-semibold">Attorney-Led Assurance</span><br/>As a licensed law firm (PLLC), your dealings are protected by attorney-client privilege. This means the highest standard of confidentiality and a legal duty to put your interests first.<br/>
               <span className="font-semibold">Proven Insight</span><br/>Our team includes a former NCAA athlete-turned-attorney, providing a unique understanding of the challenges and opportunities you face.
           </p>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          {/* <div className="grid md:grid-cols-3 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-slate-800 mb-2">10,000+</div>
               <div className="text-gray-600">Athletes Served</div>
@@ -127,7 +128,7 @@ export default function About() {
               <div className="text-4xl font-bold text-slate-800 mb-2">500+</div>
               <div className="text-gray-600">Partner Universities</div>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -187,24 +188,24 @@ export default function About() {
           <h2 className="text-3xl font-bold text-center mb-12">Leadership Team</h2>
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              {/* <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
               <h3 className="font-semibold text-lg">Jennifer Walsh</h3>
-              <p className="text-gray-600 text-sm">Founder & CEO</p>
+              <p className="text-gray-600 text-sm">Founder & CEO</p> */}
             </div>
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <h3 className="font-semibold text-lg">Michael Stevens</h3>
-              <p className="text-gray-600 text-sm">Chief Legal Officer</p>
+              <h3 className="font-semibold text-lg">Michael Campbell</h3>
+              <p className="text-gray-600 text-sm">Lawyer</p>
             </div>
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <h3 className="font-semibold text-lg">Amanda Foster</h3>
-              <p className="text-gray-600 text-sm">Head of Athlete Relations</p>
+              <h3 className="font-semibold text-lg">Andrew Wilkerson</h3>
+              <p className="text-gray-600 text-sm">Lawyer</p>
             </div>
             <div className="text-center">
-              <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              {/* <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
               <h3 className="font-semibold text-lg">Robert Chen</h3>
-              <p className="text-gray-600 text-sm">Chief Financial Advisor</p>
+              <p className="text-gray-600 text-sm">Chief Financial Advisor</p> */}
             </div>
           </div>
         </div>
@@ -252,9 +253,9 @@ export default function About() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-sm text-slate-300">
-              <li>📧 info@nilathletelaw.com</li>
-              <li>📞 (555) 123-4567</li>
-              <li>📍 Dallas, TX</li>
+              <li>nillawagency@gmail.com</li>
+              <li>(555) 123-4567</li>
+              <li>Dallas, TX</li>
             </ul>
           </div>
 
@@ -283,7 +284,7 @@ export default function About() {
 
         {/* Bottom Bar */}
         <div className="max-w-6xl mx-auto mt-8 pt-8 border-t border-slate-700 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
-          <p>© 2025 NIL Athlete Law and Finance. All rights reserved.</p>
+          <p>© 2026 NIL Athlete Law and Finance. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
