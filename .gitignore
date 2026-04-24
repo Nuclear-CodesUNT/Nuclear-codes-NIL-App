@@ -13,3 +13,6 @@ cookies.txt
 backend/test_8mb.mp4
 GEMINI.md
 node_modules
+.claude/
+AGENTS.md
+CLAUDE.md
