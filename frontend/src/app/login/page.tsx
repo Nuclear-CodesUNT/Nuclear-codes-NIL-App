@@ -184,7 +184,7 @@ export default function Login() {
           <div>
             <p className="pt-6 flex justify-center text-black">
               Don&apos;t have an account?
-              <Link href="/signup" className="ml-1 text-cyan-300 hover:underline">Sign up</Link>
+              <Link href="/signup" className="ml-1 text-gray-600 hover:underline">Sign up</Link>
             </p>
           </div>
         </div>
