@@ -34,7 +34,7 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 flex justify-between items-center bg-brand-navy px-6 py-2 shadow-md">
+    <nav className="sticky top-0 z-50 flex justify-between items-center bg-brand-bg px-6 py-2">
       <div className="flex items-center gap-6">
         <Link href="/" className="text-xl font-bold text-black">
           <Image src="/logo/NIL Law.svg" alt="NIL Law Logo" width={80} height={80} className="rounded-md object-contain" />
