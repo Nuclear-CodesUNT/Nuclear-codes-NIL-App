@@ -14,3 +14,6 @@ backend/test_8mb.mp4
 GEMINI.md
 node_modules
 backend/private.key
+.claude/
+AGENTS.md
+CLAUDE.md

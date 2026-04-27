@@ -165,7 +165,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-4">
+    <div className="min-h-screen bg-brand-bg flex items-start justify-center p-4">
       <script src="https://accounts.google.com/gsi/client" async></script>
 
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-md border border-gray-200 p-8">
@@ -304,9 +304,9 @@ export default function Signup() {
 
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-black-500 mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-cyan-300 hover:underline">
+          <Link href="/login" className="text-gray-600 hover:underline">
             Sign in
           </Link>
         </p>
