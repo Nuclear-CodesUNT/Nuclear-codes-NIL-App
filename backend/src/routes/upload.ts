@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import { promises as fs } from "fs";
-
+import Contract from "../models/Contract.js";
 import Video from "../models/Videos.js";
 import { getAssumedS3 } from "../utils/aws.js";
 import { writeTempFile, getDurationSeconds, generateThumbnail, cleanupFiles } from "../utils/media.js";
@@ -95,7 +95,41 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
       videoUrl = uploadResult.Location;
     }
 
-    // Compute duration + thumbnail
+    // If it's not a video, return S3 info only (no Video doc)
+    // If it's not a video, assume it's a document/contract
+    if (!isVideo) {
+      // Extract the IDs from the request body (or session)
+      const userId = req.body.user || req.session?.userId; 
+      const lawyerId = req.body.lawyer;
+
+      if (!userId || !lawyerId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Missing required fields: user and lawyer IDs are required." 
+        });
+      }
+
+      // 1. Create the Contract record in MongoDB
+      const newContract = await Contract.create({
+        user: userId,       // <-- Added missing field
+        lawyer: lawyerId,   // <-- Added missing field
+        fileName: req.file.originalname,
+        fileUrl: videoUrl, 
+        fileSize: req.file.size,
+        status: 'Pending'
+      });
+
+      // 2. Return the response
+      return res.status(200).json({
+        success: true,
+        message: "Document uploaded and contract created!",
+        s3Url: videoUrl,
+        key,
+        contract: newContract, 
+      });
+    }
+
+    // For videos: compute duration + thumbnail
     tempVideoPath = await writeTempFile(req.file.buffer, req.file.originalname);
     durationSeconds = await getDurationSeconds(tempVideoPath);
 
