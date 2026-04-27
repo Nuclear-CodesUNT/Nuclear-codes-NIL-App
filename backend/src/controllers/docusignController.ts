@@ -1,30 +1,32 @@
 import { Request, Response } from 'express';
 import { generateSigningUrl } from '../services/docusign.js'; 
+import { getValidToken } from '../middleware/docusignAuth.js'; // <-- NEW IMPORT
 import path from 'path';
-import fs from 'fs'; // Added for file check
+import fs from 'fs'; 
 
 export const createController = async (req: Request, res: Response) => {
   console.log("--- 🚀 Request Received: Generate Signing URL ---");
 
-  // 1. Extract Env Variables safely
+  // 1. Extract Env Variables safely (Updated for JWT)
   const accountId = process.env.DOCUSIGN_ACCOUNT_ID;
-  const accessToken = process.env.DOCUSIGN_APPLICATION_KEY; 
+  const clientId = process.env.DOCUSIGN_APPLICATION_KEY;
+  const userId = process.env.DOCUSIGN_IMPERSONATED_USER_ID;
 
-  // --- DEBUG LOGGING (Check your terminal for this!) ---
+  // --- DEBUG LOGGING ---
   console.log(`> Account ID: ${accountId ? '✅ Found' : '❌ MISSING'}`);
-  console.log(`> Access Token: ${accessToken ? `✅ Found (Length: ${accessToken.length})` : '❌ MISSING'}`);
+  console.log(`> Client ID: ${clientId ? '✅ Found' : '❌ MISSING'}`);
+  console.log(`> User ID: ${userId ? '✅ Found' : '❌ MISSING'}`);
   
-  // 2. Fail fast if keys are missing
-  if (!accountId || !accessToken) {
-    console.error("❌ ERROR: Missing DocuSign credentials in .env file");
+  // 2. Fail fast if ANY JWT keys are missing
+  if (!accountId || !clientId || !userId) {
+    console.error("❌ ERROR: Missing DocuSign JWT credentials in .env file");
     return res.status(500).json({ 
       error: 'Missing DocuSign credentials in .env file',
-      details: 'Check your .env file for DOCUSIGN_ACCOUNT_ID and DOCUSIGN_APPLICATION_KEY'
+      details: 'Check your .env file for DOCUSIGN_ACCOUNT_ID, DOCUSIGN_CLIENT_ID, and DOCUSIGN_IMPERSONATED_USER_ID'
     });
   }
 
   // 3. Pre-flight check for the PDF file
-  // This catches the most common "500 Error" where the file path is wrong
   const absolutePath = path.resolve(process.cwd(), 'files/contract.pdf');
   console.log(`> Looking for file at: ${absolutePath}`);
   
@@ -37,9 +39,13 @@ export const createController = async (req: Request, res: Response) => {
   }
 
   try {
+    // 4. Get a valid JWT Token (cached or fresh)
+    const accessToken = await getValidToken();
+    console.log(`✅ Access Token Acquired (Length: ${accessToken.length})`);
+
     console.log("> Calling DocuSign API...");
     
-    // 4. Call your helper function
+    // 5. Call your helper function using the dynamic token
     const url = await generateSigningUrl(
       accessToken, 
       accountId,
@@ -47,14 +53,14 @@ export const createController = async (req: Request, res: Response) => {
         signerEmail: 'user@example.com', 
         signerName: 'John Doe',
         userClientId: '1001',
-        documentPath: 'files/contract.pdf', // Ensure this matches the check above
+        documentPath: 'files/contract.pdf',
         returnUrl: 'http://localhost:3000/contracts?status=signed'
       }
     );
     
     console.log("✅ SUCCESS: Signing URL generated!");
     
-    // 5. Return the URL
+    // 6. Return the URL
     res.json({ signingUrl: url });
 
   } catch (error: any) {
@@ -62,14 +68,12 @@ export const createController = async (req: Request, res: Response) => {
     console.error('--- ❌ CRITICAL DOCUSIGN ERROR ---');
     console.error('Message:', error.message);
     
-    // If it's a DocuSign API error, it often hides details inside 'response.body'
     if (error.response && error.response.body) {
       console.error('API Error Body:', JSON.stringify(error.response.body, null, 2));
     } else {
       console.error('Stack Trace:', error.stack);
     }
 
-    // Send the REAL error back to the frontend so you can see it
     res.status(500).json({
       error: 'Error generating signing URL',
       message: error.message,
