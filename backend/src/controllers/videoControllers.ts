@@ -213,3 +213,40 @@ export const toggleLikeVideo = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Server error toggling like." });
   }
 };
+
+// POST /api/videos/:id/comment
+export const addCommentVideo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { userId, userName, text } = req.body;
+
+    if (!userId || !text) {
+      return res.status(400).json({ success: false, message: "User ID and text are required." });
+    }
+
+    const video = await Videos.findById(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: "Video not found." });
+    }
+
+    if (!video.comments) video.comments = [];
+
+    const newComment = {
+      userId,
+      userName: userName || "Unknown User",
+      text,
+      createdAt: new Date()
+    };
+
+    video.comments.push(newComment);
+    await video.save();
+
+    return res.status(201).json({
+      success: true,
+      comment: newComment
+    });
+  } catch (error) {
+    console.error("addCommentVideo error:", error);
+    return res.status(500).json({ success: false, message: "Server error adding comment." });
+  }
+};
