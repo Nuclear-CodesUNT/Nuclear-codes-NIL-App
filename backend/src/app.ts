@@ -17,6 +17,7 @@ import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import uploadRouter from "./routes/upload.js";
 import contractsRouter from "./routes/contracts.js";
 import athletesRouter from "./routes/athletes.js";
+import { createController } from './controllers/docusignController.js';
 import messagesRouter from './routes/messages.js';
 
 const app: Express = express();
@@ -54,6 +55,9 @@ app.use(sessionMiddleware);
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Controller
+app.post('/api/signing-url', createController);
+
 //routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRouter);
@@ -65,8 +69,6 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/athletes", athletesRouter);
 app.use("/api/progress", progressRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/api/contracts", contractsRouter);
-app.use("/api/upload", uploadRouter);
 app.use('/api/messages', messagesRouter);
 
 export default app;

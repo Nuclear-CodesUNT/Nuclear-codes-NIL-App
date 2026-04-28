@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
-import { Eye, Download, Loader2 } from "lucide-react";
+import { Eye, Download, Loader2, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -44,6 +44,9 @@ export function ContractsTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [viewerContract, setViewerContract] = useState<Contract | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -113,23 +116,36 @@ export function ContractsTable() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const handleView = (fileUrl: string) => {
-    window.open(fileUrl, "_blank", "noopener,noreferrer");
+  const fetchSignedUrl = async (contractId: string): Promise<string | null> => {
+    try {
+      const response = await api.get(`/contracts/${contractId}/view`);
+      return response.data.url;
+    } catch (err) {
+      console.error("Failed to get viewing URL:", err);
+      return null;
+    }
   };
 
-  const handleDownload = (fileUrl: string, fileName: string) => {
-    // Create an anchor element and use the download attribute
-    // This approach works better for cross-origin files like S3
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = fileName;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    
-    // For cross-origin downloads, we need to open in new tab
-    // The browser will handle the download based on Content-Disposition header
-    // If S3 doesn't set Content-Disposition, it will open in a new tab instead
-    window.open(fileUrl, "_blank");
+  const handleView = async (contract: Contract) => {
+    setViewerContract(contract);
+    setViewerLoading(true);
+    setViewerUrl(null);
+
+    const url = await fetchSignedUrl(contract._id);
+    setViewerUrl(url);
+    setViewerLoading(false);
+  };
+
+  const handleCloseViewer = () => {
+    setViewerContract(null);
+    setViewerUrl(null);
+  };
+
+  const handleDownload = async (contract: Contract) => {
+    const url = await fetchSignedUrl(contract._id);
+    if (url) {
+      window.open(url, "_blank");
+    }
   };
 
   if (loading) {
@@ -237,7 +253,7 @@ export function ContractsTable() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleView(contract.fileUrl)}
+                      onClick={() => handleView(contract)}
                       title="View file"
                     >
                       <Eye size={16} />
@@ -245,7 +261,7 @@ export function ContractsTable() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDownload(contract.fileUrl, contract.fileName)}
+                      onClick={() => handleDownload(contract)}
                       title="Download file"
                     >
                       <Download size={16} />
@@ -256,6 +272,55 @@ export function ContractsTable() {
             ))}
           </TableBody>
         </Table>
+      )}
+
+      {/* Contract Viewer Panel — slides in from the right as an overlay */}
+      {viewerContract && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop — click to close */}
+          <div className="flex-1 bg-black/40" onClick={handleCloseViewer} />
+
+          {/* Panel */}
+          <div className="w-full max-w-3xl bg-white shadow-xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  {viewerContract.fileName}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {viewerContract.user?.name || "Unknown"} &middot; {formatDate(viewerContract.submittedAt)}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseViewer}
+                className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 bg-gray-100">
+              {viewerLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-brand-teal" />
+                  <span className="ml-2 text-gray-500">Loading document...</span>
+                </div>
+              ) : viewerUrl ? (
+                <iframe
+                  src={viewerUrl}
+                  className="w-full h-full border-0"
+                  title={viewerContract.fileName}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-red-500">
+                  Failed to load document. Please try again.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -7,25 +7,25 @@ import api from '@/lib/api';
 
 function formatTimeAgo(dateString: string): string {
   if (!dateString) return 'Just now';
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (seconds < 60) return 'Just now';
-  
+
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
-  
+
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-  
+
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  
+
   const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;
-  
+
   const years = Math.floor(days / 365);
   return `${years}y ago`;
 }
@@ -51,24 +51,24 @@ export default function Dashboard() {
       }
 
       try {
-        const videoRes = await api.get('/videos'); 
-        
+        const videoRes = await api.get('/videos');
+
         if (videoRes.data?.success) {
           const formattedPosts = videoRes.data.videos.map((video: any) => ({
             id: video._id, // Passing the video ID to the component
-            athleteName: video.athleteName || 'Unknown Athlete', 
+            athleteName: video.athleteName || 'Unknown Athlete',
             sport: video.sport || 'General',
             school: video.school || 'Unknown School',
             postType: 'video' as const,
-            mediaUrl: video.videoUrl, 
+            mediaUrl: video.videoUrl,
             caption: video.description || video.title || '',
             // Map the new like logic:
             likes: video.likedBy ? video.likedBy.length : 0,
             isLiked: video.likedBy && currentUserId ? video.likedBy.includes(currentUserId) : false,
             comments: video.comments || 0,
-            timeAgo: formatTimeAgo(video.createdAt) 
+            timeAgo: formatTimeAgo(video.createdAt)
           }));
-          
+
           setFeedPosts(formattedPosts);
         }
       } catch (error) {
@@ -102,7 +102,7 @@ export default function Dashboard() {
         </div>
 
         {/* Sidebar - Right Side */}
-        <div className="w-96 space-y-6">
+        <div className="w-96 space-y-6 sticky top-6 self-start">
           <MessagesOverview />
         </div>
       </div>

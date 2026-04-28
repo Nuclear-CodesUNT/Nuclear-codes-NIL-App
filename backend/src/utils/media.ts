@@ -2,6 +2,32 @@ import { promises as fs } from "fs";
 import { spawn } from "child_process";
 import path from "path";
 import os from "os";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+function resolveBinaryPath(
+  kind: "ffmpeg" | "ffprobe"
+): string {
+  const envKey = kind === "ffmpeg" ? "FFMPEG_PATH" : "FFPROBE_PATH";
+  const fromEnv = process.env[envKey];
+  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
+
+  try {
+    if (kind === "ffmpeg") {
+      const maybePath = require("ffmpeg-static");
+      if (typeof maybePath === "string" && maybePath) return maybePath;
+    }
+
+    const ffprobeStatic = require("ffprobe-static");
+    const maybePath = kind === "ffprobe" ? ffprobeStatic?.path : null;
+    if (typeof maybePath === "string" && maybePath) return maybePath;
+  } catch {
+    // Fall back to relying on PATH.
+  }
+
+  return kind;
+}
 
 function run(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -32,15 +58,23 @@ export async function writeTempFile(buffer: Buffer, filename: string): Promise<s
 
 export async function getDurationSeconds(inputPath: string): Promise<number> {
   // ffprobe returns duration in seconds (string)
-  const out = await run("ffprobe", [
-    "-v", "error",
-    "-show_entries", "format=duration",
-    "-of", "default=noprint_wrappers=1:nokey=1",
-    inputPath,
-  ]);
+  try {
+    const out = await run(resolveBinaryPath("ffprobe"), [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      inputPath,
+    ]);
 
-  const seconds = Number(out);
-  return Number.isFinite(seconds) ? Math.round(seconds) : 0;
+    const seconds = Number(out);
+    return Number.isFinite(seconds) ? Math.round(seconds) : 0;
+  } catch {
+    // Best-effort: if ffprobe isn't available, don't fail the upload.
+    return 0;
+  }
 }
 
 export async function generateThumbnail(inputPath: string): Promise<string> {
@@ -48,7 +82,7 @@ export async function generateThumbnail(inputPath: string): Promise<string> {
   const thumbPath = path.join(os.tmpdir(), `thumb-${Date.now()}.jpg`);
 
   // Grab frame at ~1 second, scale to 640 width while preserving aspect
-  await run("ffmpeg", [
+  await run(resolveBinaryPath("ffmpeg"), [
     "-y",
     "-ss", "1",
     "-i", inputPath,

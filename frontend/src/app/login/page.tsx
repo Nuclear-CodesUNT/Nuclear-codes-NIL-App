@@ -184,7 +184,7 @@ export default function Login() {
           <div>
             <p className="pt-6 flex justify-center text-black">
               Don&apos;t have an account?
-              <Link href="/signup" className="ml-1 text-cyan-300 hover:underline">Sign up</Link>
+              <Link href="/signup" className="ml-1 text-gray-600 hover:underline">Sign up</Link>
             </p>
           </div>
         </div>
@@ -208,7 +208,7 @@ export default function Login() {
               className="w-12 h-12 rounded-full object-cover"
             />
             <div>
-              <p className="text-white font-semibold">LeBron James</p>
+              <p className="text-white font-semibold">JeBron Lames</p>
               <p className="text-gray-400 text-sm">Greatest basketball player of all time</p>
             </div>
           </div>
