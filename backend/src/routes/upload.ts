@@ -94,9 +94,9 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
         .promise();
       videoUrl = uploadResult.Location;
     }
-
     // If it's not a video, return S3 info only (no Video doc)
     // If it's not a video, assume it's a document/contract
+    const isVideo = req.file.mimetype.startsWith("video/");
     if (!isVideo) {
       // Extract the IDs from the request body (or session)
       const userId = req.body.user || req.session?.userId; 

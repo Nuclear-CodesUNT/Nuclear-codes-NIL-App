@@ -17,7 +17,7 @@ export const generateSigningUrl = async (
   args: SigningRequest
 ): Promise<string> => {
   
-  // 2. USE THE PREFIX (docusign.ApiClient)
+  // 2. USE THE PREFIX (docusign.ApiClient) - This is a real class, so 'new' is fine here
   const dsApiClient = new docusign.ApiClient();
   dsApiClient.setBasePath('https://demo.docusign.net/restapi');
   dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -35,46 +35,45 @@ export const generateSigningUrl = async (
   const pdfBytes = fs.readFileSync(resolvedPath);
   const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
 
-  // 4. Create Envelope Definition
-  const env = new docusign.EnvelopeDefinition();
-  env.emailSubject = 'Please sign this document';
+  // 4. Create Object Literals typed as interfaces (Removes TS errors)
+  const doc: docusign.Document = {
+    documentBase64: pdfBase64,
+    name: 'Contract', 
+    fileExtension: 'pdf',
+    documentId: '1'
+  };
 
-  // Create Document
-  const doc = new docusign.Document();
-  doc.documentBase64 = pdfBase64;
-  doc.name = 'Contract'; 
-  doc.fileExtension = 'pdf';
-  doc.documentId = '1';
+  const signHere: docusign.SignHere = {
+    documentId: '1',
+    pageNumber: '1',
+    recipientId: '1',
+    tabLabel: 'SignHereTab',
+    xPosition: '100',
+    yPosition: '150'
+  };
 
-  // Create Signer
-  const signer = new docusign.Signer();
-  signer.email = args.signerEmail;
-  signer.name = args.signerName;
-  signer.recipientId = '1';
-  signer.clientUserId = args.userClientId;
+  const tabs: docusign.Tabs = {
+    signHereTabs: [signHere]
+  };
 
-  // Create SignHere Tab
-  const signHere = new docusign.SignHere();
-  signHere.documentId = '1';
-  signHere.pageNumber = '1';
-  signHere.recipientId = '1';
-  signHere.tabLabel = 'SignHereTab';
-  signHere.xPosition = '100';
-  signHere.yPosition = '150';
+  const signer: docusign.Signer = {
+    email: args.signerEmail,
+    name: args.signerName,
+    recipientId: '1',
+    clientUserId: args.userClientId,
+    tabs: tabs
+  };
 
-  // Add tab to signer
-  const tabs = new docusign.Tabs();
-  tabs.signHereTabs = [signHere];
-  signer.tabs = tabs;
+  const recipients: docusign.Recipients = {
+    signers: [signer]
+  };
 
-  // Add recipients
-  const recipients = new docusign.Recipients();
-  recipients.signers = [signer];
-  env.recipients = recipients;
-
-  // Add document
-  env.documents = [doc];
-  env.status = 'sent';
+  const env: docusign.EnvelopeDefinition = {
+    emailSubject: 'Please sign this document',
+    documents: [doc],
+    recipients: recipients,
+    status: 'sent'
+  };
 
   // 5. Send Envelope
   console.log('Sending envelope to DocuSign...');
@@ -87,25 +86,29 @@ export const generateSigningUrl = async (
     throw new Error('Envelope creation failed, no ID returned.');
   }
 
-    // 5. Create Recipient View (The Signing URL)
-    const viewRequest = new docusign.RecipientViewRequest();
-    viewRequest.returnUrl = args.returnUrl;
-    viewRequest.authenticationMethod = 'none';
-    viewRequest.email = args.signerEmail;
-    viewRequest.userName = args.signerName;
-    viewRequest.clientUserId = args.userClientId;
+  // 6. Create Recipient View (The Signing URL)
+  // Use a type intersection (&) to inject the missing properties into the DocuSign type
+  const viewRequest: docusign.RecipientViewRequest & { 
+    frameAncestors?: string[]; 
+    messageOrigins?: string[]; 
+  } = {
+    returnUrl: args.returnUrl,
+    authenticationMethod: 'none',
+    email: args.signerEmail,
+    userName: args.signerName,
+    clientUserId: args.userClientId,
+    
+    // Now TypeScript will accept these without throwing an error!
+    frameAncestors: ['http://localhost:3000', 'https://apps.docusign.com'], 
+    messageOrigins: ['https://apps.docusign.com']
+  };
 
-    // ADD THESE TWO LINES TO FIX THE EMBEDDING ERROR
-    viewRequest.frameAncestors = ['http://localhost:3000', 'https://apps.docusign.com']; 
-    viewRequest.messageOrigins = ['https://apps.docusign.com'];
-
-    // 2. ENSURE THIS IS SET TO 'focused'
-    // This removes the DocuSign header/footer which often causes the block
-    const viewResults = await envelopesApi.createRecipientView(accountId, envelopeId, {
+  // Ensure this is set to 'focused'
+  // This removes the DocuSign header/footer which often causes the block
+  const viewResults = await envelopesApi.createRecipientView(accountId, envelopeId, {
     recipientViewRequest: viewRequest,
     displayFormat: 'focused' 
-    });
-
+  });
 
   return viewResults.url!;
 };

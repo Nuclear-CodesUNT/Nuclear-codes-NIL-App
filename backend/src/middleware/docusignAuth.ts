@@ -36,7 +36,12 @@ export const getValidToken = async (): Promise<string> => {
     tokenCache = results.body.access_token;
     tokenExpiry = Date.now() + (results.body.expires_in * 1000);
 
+    // Option A: Throw an error if the token is missing (Recommended for auth)
+    if (!tokenCache) {
+        throw new Error("DocuSign token not found in cache");
+    }
     return tokenCache;
+
   }
    catch (error) {
     console.error("❌ Failed to generate JWT Token:", error);
