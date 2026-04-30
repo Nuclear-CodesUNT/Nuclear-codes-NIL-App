@@ -42,7 +42,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
     }
   }, []);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_DOCUSIGN_CLIENT_ID || 'http://localhost:4000';
 
   const initializeSigningSession = async () => {
     try {
