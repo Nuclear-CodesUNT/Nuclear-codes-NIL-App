@@ -50,6 +50,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
       const response = await fetch(`${API_BASE_URL}/api/signing-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ signerEmail, signerName }),
       });
 
