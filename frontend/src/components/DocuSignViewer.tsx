@@ -42,7 +42,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
     }
   }, []);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_DOCUSIGN_CLIENT_ID || 'http://localhost:4000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
 
   const initializeSigningSession = async () => {
     try {
@@ -64,7 +64,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
 
       // B. Initialize DocuSign
       // REPLACE with your actual Integration Key (Client ID)
-      const docusign = await window.DocuSign.loadDocuSign(process.env.DOCUSIGN_INTEGRATION_KEY);
+      const docusign = await window.DocuSign.loadDocuSign(process.env.NEXT_PUBLIC_DOCUSIGN_CLIENT_ID);
 
       // C. Render the Signing UI
       const signing = docusign.signing({
