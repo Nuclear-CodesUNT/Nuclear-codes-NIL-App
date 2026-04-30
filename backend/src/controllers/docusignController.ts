@@ -44,7 +44,7 @@ export const createController = async (req: Request, res: Response) => {
     console.log(`✅ Access Token Acquired (Length: ${accessToken.length})`);
 
     console.log("> Calling DocuSign API...");
-    
+    const FRONTEND_URL = process.env.CORS_ORIGIN || 'http://localhost:3000';
     // 5. Call your helper function using the dynamic token
     const url = await generateSigningUrl(
       accessToken, 
@@ -54,7 +54,7 @@ export const createController = async (req: Request, res: Response) => {
         signerName: 'John Doe',
         userClientId: '1001',
         documentPath: 'files/contract.pdf',
-        returnUrl: 'http://localhost:3000/contracts?status=signed'
+        returnUrl: `${FRONTEND_URL}/contracts?status=signed`
       }
     );
     
