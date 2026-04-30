@@ -1,4 +1,3 @@
-// 1. USE DEFAULT IMPORT (Fixes SyntaxError)
 import docusign from 'docusign-esign';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,14 +16,15 @@ export const generateSigningUrl = async (
   args: SigningRequest
 ): Promise<string> => {
   
-  // 2. USE THE PREFIX (docusign.ApiClient) - This is a real class, so 'new' is fine here
+  // 1. Dynamic Base Path (Demo for testing, Production for live)
+  const DOCUSIGN_BASE_PATH = process.env.DOCUSIGN_BASE_PATH || 'https://demo.docusign.net/restapi';
   const dsApiClient = new docusign.ApiClient();
-  dsApiClient.setBasePath('https://demo.docusign.net/restapi');
+  dsApiClient.setBasePath(DOCUSIGN_BASE_PATH);
   dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
   
   const envelopesApi = new docusign.EnvelopesApi(dsApiClient);
 
-  // 3. Resolve Path
+  // 2. Resolve Path (Reminder: Ensure 'files' is deployed to your cloud server!)
   const resolvedPath = path.resolve(process.cwd(), args.documentPath);
   console.log(`Reading PDF from: ${resolvedPath}`);
   
@@ -35,7 +35,6 @@ export const generateSigningUrl = async (
   const pdfBytes = fs.readFileSync(resolvedPath);
   const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
 
-  // 4. Create Object Literals typed as interfaces (Removes TS errors)
   const doc: docusign.Document = {
     documentBase64: pdfBase64,
     name: 'Contract', 
@@ -75,7 +74,6 @@ export const generateSigningUrl = async (
     status: 'sent'
   };
 
-  // 5. Send Envelope
   console.log('Sending envelope to DocuSign...');
   const results = await envelopesApi.createEnvelope(accountId, {
     envelopeDefinition: env,
@@ -86,8 +84,9 @@ export const generateSigningUrl = async (
     throw new Error('Envelope creation failed, no ID returned.');
   }
 
-  // 6. Create Recipient View (The Signing URL)
-  // Use a type intersection (&) to inject the missing properties into the DocuSign type
+  // 3. Dynamic Frontend URL for frameAncestors
+  const FRONTEND_URL = process.env.CORS_ORIGIN || 'http://localhost:3000';
+
   const viewRequest: docusign.RecipientViewRequest & { 
     frameAncestors?: string[]; 
     messageOrigins?: string[]; 
@@ -98,13 +97,11 @@ export const generateSigningUrl = async (
     userName: args.signerName,
     clientUserId: args.userClientId,
     
-    // Now TypeScript will accept these without throwing an error!
-    frameAncestors: ['http://localhost:3000', 'https://apps.docusign.com'], 
+    // Dynamically inject the allowed URL based on environment
+    frameAncestors: [FRONTEND_URL, 'https://apps.docusign.com'], 
     messageOrigins: ['https://apps.docusign.com']
   };
 
-  // Ensure this is set to 'focused'
-  // This removes the DocuSign header/footer which often causes the block
   const viewResults = await envelopesApi.createRecipientView(accountId, envelopeId, {
     recipientViewRequest: viewRequest,
     displayFormat: 'focused' 
