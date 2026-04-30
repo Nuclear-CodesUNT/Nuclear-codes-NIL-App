@@ -16,6 +16,7 @@ interface SubmittedFile {
 }
 
 export default function ContractUploadForm() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -366,7 +367,7 @@ export default function ContractUploadForm() {
                               onClick={async () => {
                                 try {
                                   // Call your backend to get the URL
-                                  const response = await fetch('http://localhost:4000/api/signing-url', {
+                                  const response = await fetch(`${API_BASE_URL}/api/signing-url`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 

@@ -42,8 +42,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
     }
   }, []);
 
-  // const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
-  const API_BASE_URL = 'https://nuclear-codes-nil-app-production.up.railway.app';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
 
   const initializeSigningSession = async () => {
     try {
