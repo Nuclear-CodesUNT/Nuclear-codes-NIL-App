@@ -42,12 +42,15 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
     }
   }, []);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
+
   const initializeSigningSession = async () => {
     try {
-      // A. Fetch the Signing URL from YOUR Backend
-      const response = await fetch('http://localhost:4000/api/signing-url', {
+      // 2. Use the dynamic URL in your fetch request
+      const response = await fetch(`${API_BASE_URL}/api/signing-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ signerEmail, signerName }),
       });
 
@@ -62,7 +65,7 @@ const DocuSignViewer: React.FC<DocuSignViewerProps> = ({ signerEmail, signerName
 
       // B. Initialize DocuSign
       // REPLACE with your actual Integration Key (Client ID)
-      const docusign = await window.DocuSign.loadDocuSign(process.env.DOCUSIGN_INTEGRATION_KEY);
+      const docusign = await window.DocuSign.loadDocuSign(process.env.NEXT_PUBLIC_DOCUSIGN_CLIENT_ID);
 
       // C. Render the Signing UI
       const signing = docusign.signing({
