@@ -17,10 +17,11 @@ interface FeedCardProps {
   caption: string;
   likes: number;
   isLiked?: boolean;
-  comments: number;
+  comments: any[];
   timeAgo: string;
   avatarUrl?: string;
   athleteId?: string; // Athlete document _id (used for highlights fetch)
+  currentUserName?: string; 
 }
 
 export default function FeedCard({
@@ -37,11 +38,18 @@ export default function FeedCard({
   timeAgo,
   avatarUrl,
   athleteId,
+  currentUserName
 }: FeedCardProps) {
 
   // Local state for the optimistic UI
   const [liked, setLiked] = useState(isLiked || false);
   const [likeCount, setLikeCount] = useState(likes || 0);
+
+  // Comment states
+  const [showComments, setShowComments] = useState(false);
+  const [commentList, setCommentList] = useState(comments || []);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLikeClick = async () => {
     if (!athleteId) return; // Prevent liking if not logged in
@@ -58,6 +66,29 @@ export default function FeedCard({
       // Revert if the server fails
       setLiked(liked);
       setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !athleteId) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.post(`/videos/${id}/comment`, {
+        userId: athleteId,
+        userName: currentUserName || "User", 
+        text: newComment.trim()
+      });
+
+      if (res.data?.success) {
+        setCommentList([...commentList, res.data.comment]);
+        setNewComment('');
+      }
+    } catch (error) {
+      console.error("Failed to post comment", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,32 +140,66 @@ export default function FeedCard({
         ) : null}
       </div>
 
-      {/* 4. Completely removed the entire Highlights mapped UI block */}
+      {/* Content & Actions */}
+      <div className="p-5">
+        <p className="text-[#1F2642] mb-4 text-base">{caption}</p>
 
-      {/* Content */}
-      <div className="p-4">
-        <p className="text-[#1F2642] mb-3">{caption}</p>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between text-gray-600">
-          <div className="flex items-center gap-4">
+        {/* Actions (Share Removed) */}
+        <div className="flex items-center justify-between text-gray-500 pt-2">
+          <div className="flex items-center gap-6">
             <button 
               onClick={handleLikeClick}
               className={`flex items-center gap-2 transition-colors ${liked ? 'text-red-500' : 'hover:text-[#00D9FF]'}`}
             >
-              <Heart className="h-5 w-5" fill={liked ? 'currentColor' : 'none'} />
-              <span>{likeCount}</span>
+              <Heart className="h-6 w-6" fill={liked ? 'currentColor' : 'none'} />
+              <span className="font-medium">{likeCount}</span>
             </button>
-            <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
-              <MessageCircle className="h-5 w-5" />
-              <span>{comments}</span>
-            </button>
-            <button className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors">
-              <Share2 className="h-5 w-5" />
+            <button 
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center gap-2 hover:text-[#00D9FF] transition-colors"
+            >
+              <MessageCircle className="h-6 w-6" />
+              <span className="font-medium">{commentList.length}</span>
             </button>
           </div>
-          <span className="text-sm">{timeAgo}</span>
+          <span className="text-sm text-gray-400">{timeAgo}</span>
         </div>
+
+        {/* Interactive Comments Section */}
+        {showComments && (
+          <div className="mt-5 pt-5 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-4 max-h-48 overflow-y-auto mb-4 pr-2 custom-scrollbar">
+              {commentList.length > 0 ? (
+                commentList.map((c: any, i: number) => (
+                  <div key={i} className="text-sm bg-gray-50 p-3 rounded-lg">
+                    <span className="font-bold text-[#1F2642] mr-2">{c.userName}</span>
+                    <span className="text-gray-700">{c.text}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">No comments yet. Start the conversation!</p>
+              )}
+            </div>
+
+            <form onSubmit={handleCommentSubmit} className="flex gap-3 items-center mt-2">
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-full px-5 py-2.5 focus:outline-none focus:border-[#00D9FF] focus:ring-1 focus:ring-[#00D9FF] transition-all"
+                disabled={!athleteId || isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={!newComment.trim() || !athleteId || isSubmitting}
+                className="text-sm font-bold text-white bg-[#2B3359] hover:bg-[#1a1f36] px-5 py-2.5 rounded-full disabled:opacity-50 transition-colors"
+              >
+                Post
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </Card>
   );

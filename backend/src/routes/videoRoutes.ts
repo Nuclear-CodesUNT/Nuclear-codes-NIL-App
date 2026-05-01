@@ -2,7 +2,7 @@ import { Router } from "express";
 import Video from "../models/Videos.js";
 import { isLawyer } from "../middleware/isLawyer.js";
 import { getAssumedS3 } from "../utils/aws.js";
-import { getAllVideos, getVideoById, toggleLikeVideo } from "../controllers/videoControllers.js";
+import { getAllVideos, getVideoById, toggleLikeVideo, addCommentVideo } from "../controllers/videoControllers.js";
 
 const router = Router();
 
@@ -14,6 +14,9 @@ router.get("/:id", getVideoById);
 
 // POST /api/videos/:id/like
 router.post("/:id/like", toggleLikeVideo);
+
+// POST /api/videos/:id/comment
+router.post("/:id/comment", addCommentVideo);
 
 // DELETE /api/videos/:id  (lawyers only)
 router.delete("/:id", isLawyer, async (req, res) => {

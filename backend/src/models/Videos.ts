@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface IComment {
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface IVideo extends Document {
   title: string;
   description?: string;
@@ -12,6 +19,7 @@ export interface IVideo extends Document {
   school?: string;
 
   likedBy: string[];
+  comments?: IComment[];
 
   thumbnailUrl?: string;
   thumbnailKey?: string;
@@ -36,6 +44,18 @@ const VideosSchema = new Schema<IVideo>(
     school: { type: String, default: "Unknown School" },
 
     likedBy: { type: [String], default: [] },
+
+    comments: {
+      type: [
+        {
+          userId: { type: String, required: true },
+          userName: { type: String, default: "User" },
+          text: { type: String, required: true },
+          createdAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: []
+    },
 
     thumbnailUrl: { type: String, default: "" },
     thumbnailKey: { type: String, default: "" },

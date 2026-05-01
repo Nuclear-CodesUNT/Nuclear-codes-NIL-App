@@ -32,6 +32,7 @@ function formatTimeAgo(dateString: string): string {
 
 export default function Dashboard() {
   const [athleteId, setAthleteId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string>(""); // New state
   const [feedPosts, setFeedPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,6 +43,11 @@ export default function Dashboard() {
       try {
         const profileRes = await api.get('/profile');
         const id = profileRes.data?.profile?._id;
+
+        const firstName = profileRes.data?.profile?.firstName || "";
+        const lastName = profileRes.data?.profile?.lastName || "";
+        const fullName = `${firstName} ${lastName}`.trim();
+        
         if (typeof id === "string" && id) {
           currentUserId = id;
           setAthleteId(id);
@@ -65,7 +71,7 @@ export default function Dashboard() {
             // Map the new like logic:
             likes: video.likedBy ? video.likedBy.length : 0,
             isLiked: video.likedBy && currentUserId ? video.likedBy.includes(currentUserId) : false,
-            comments: video.comments || 0,
+            comments: video.comments || [],
             timeAgo: formatTimeAgo(video.createdAt)
           }));
 
@@ -82,27 +88,39 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex gap-6 p-6 max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-gray-50/50"> {/* Softer background color */}
+      {/* Increased gap, centered layout, removed max-w restriction constraint */}
+      <div className="flex justify-center gap-10 p-8 max-w-[1400px] mx-auto">
+        
         {/* Main Feed - Left Side */}
-        <div className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-4 max-w-[700px] mx-auto">
+        <div className="flex-1 max-w-[750px]"> {/* Increased max-width of feed cards */}
+          <ScrollArea className="h-[calc(100vh-4rem)]"> {/* Proper scroll boundaries */}
+            {/* Increased space-y-8 for more vertical whitespace between cards */}
+            <div className="space-y-8 pr-4 pb-10">
               {isLoading ? (
-                <p className="text-center text-gray-500">Loading feed...</p>
+                <div className="flex justify-center py-10">
+                   <p className="text-gray-500 font-medium">Loading feed...</p>
+                </div>
               ) : feedPosts.length > 0 ? (
                 feedPosts.map((post) => (
-                  <FeedCard key={post.id} {...post} athleteId={athleteId || undefined} />
+                  <FeedCard 
+                    key={post.id} 
+                    {...post} 
+                    athleteId={athleteId || undefined} 
+                    currentUserName={currentUserName} 
+                  />
                 ))
               ) : (
-                <p className="text-center text-gray-500">No posts available yet.</p>
+                <div className="flex justify-center py-10">
+                   <p className="text-gray-500 font-medium">No posts available yet.</p>
+                </div>
               )}
             </div>
           </ScrollArea>
         </div>
 
         {/* Sidebar - Right Side */}
-        <div className="w-96 space-y-6 sticky top-6 self-start">
+        <div className="w-[400px] hidden lg:block sticky top-8 self-start">
           <MessagesOverview />
         </div>
       </div>
